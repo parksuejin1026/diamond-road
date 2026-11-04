@@ -44,7 +44,7 @@ export default function CareerApp() {
     <header><a href={(process.env.NEXT_PUBLIC_BASE_PATH || '') + '/'} className="brand">D<span>◆</span>R <small>DIAMOND ROAD</small></a><span className="badge">DIAMOND ROAD · MVP</span></header>
     {!save && <section className="intro"><p className="eyebrow">YOUR CAREER. YOUR DIAMOND.</p><h1>전설의 시작은,<br /><em>당신의 첫 시즌.</em></h1><p>열여섯, 학교 야구부의 벤치에서 시작합니다.<br />고교 무대를 지나 KBO의 전설이 될 때까지.</p><div className="landingSteps"><span>고교 야구부</span><span>드래프트</span><span>KBO</span><span>명예의 전당</span></div></section>}
     {error && <p role="alert" className="error">{error}</p>}
-    {!ready ? <section className="panel" role="status">커리어를 불러오는 중…</section> : save ? <section className="panel">
+    {!ready || (save && pathname.replace(/\/$/, '') !== '/career') ? <section className="panel" role="status">커리어를 불러오는 중…</section> : save ? <section className="panel">
       <div hidden={tab !== 'player'}><div className="panelHead"><div><p className="eyebrow">{save.year} · {isYouth(save) ? `고교 ${save.youth!.grade}학년` : phaseLabels[save.phase]}</p><h2>{save.player.name} <small>{save.player.age}세 / {positionName(save.player)} · {statusLabels[save.player.rosterStatus ?? 'BENCH']}</small></h2><p>{teamName(save.player.teamId)}{isYouth(save) ? ' · 16세부터 시작한 나의 야구' : ` · 연봉 ${save.player.salaryCR.toLocaleString()} CR`}</p></div><div className="ovr"><span>OVR</span><strong>{overall(save.player)}</strong></div></div>
       <div className="skills">{Object.entries(save.player.skills).map(([key, value]) => <div key={key}><span>{labels[key]}</span><strong>{value}</strong><meter min="1" max="99" value={value} aria-label={labels[key]} /></div>)}</div>
       <PositionSettings save={save} busy={busy} onChange={persist} /></div>

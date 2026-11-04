@@ -1,6 +1,6 @@
 # 계약 시스템
 
-구현 브랜치: `feature-season-development`. 공개 Pages에는 아직 미배포.
+2026-11-05 `main`에 병합하고 공개 Pages에 배포했다. 배포 커밋 `bc79b36`, GitHub Actions `41860588286` 성공. [게임 플레이](https://parksuejin1026.github.io/diamond-road/). 공개 사이트에서 고교 3년·드래프트·프로 시즌·연봉 협상·자동 잔류·저장 복원을 확인했다.
 
 ## 참고한 공식 자료
 

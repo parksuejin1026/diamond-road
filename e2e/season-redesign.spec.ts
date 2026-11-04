@@ -1,6 +1,17 @@
 import { expect, test } from '@playwright/test';
 import { createCareer } from '../src/engine/career';
 import { advanceRound } from '../src/engine/season';
+test('생성 직후 진행은 커리어 페이지 이동이 끝난 뒤 시작한다', async ({ page }) => {
+  await page.route('**/career/**', async route => {
+    await new Promise(resolve => setTimeout(resolve, 300)); await route.continue();
+  });
+  await page.goto('./');
+  await page.getByRole('textbox', { name: '선수 이름' }).fill('빠른 시작');
+  await page.getByRole('button', { name: '나의 커리어 시작하기 →' }).click();
+  await page.getByRole('button', { name: '시즌 준비하기 →' }).click();
+  await page.getByRole('button', { name: '시즌 전체 자동 진행 →' }).click();
+  await expect(page.getByRole('button', { name: '다음 학년으로 →' })).toBeVisible({ timeout: 60000 });
+});
 test('투수를 생성하면 구원 보직에서 시작한다', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
   await page.goto('./');
