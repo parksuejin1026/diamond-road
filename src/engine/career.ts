@@ -8,11 +8,12 @@ import type { Award } from './awards';
 import { createRoster, PLAYER_STYLES } from './roster';
 import { SCHOOLS, createSchoolSchedule } from './schools';
 import type { YouthCareer } from './youth';
+import { FIELD_POSITIONS } from './positions';
 export interface CareerSave { youth?: YouthCareer | null; }
 export interface CareerSave { trainingHistory?: { year: number; skill: string }[]; }
 export interface CareerSave { focusSkill?: string; development?: import('./development').DevelopmentReport; }
 export interface CareerSave { schemaVersion: 1; seed: number; rngState: number; player: Player; players: Player[]; schedule: ScheduleGame[]; phase: 'PRESEASON' | 'SIMULATING' | 'HIGHLIGHT_READY' | 'MINI_GAME' | 'DRAFT' | 'SEASON_RESULT' | 'RETIRED'; trained: boolean; year: number; league: LeagueSeason; seasons: SeasonSnapshot[]; pendingGame: PendingGame | null; highlightCount: number; lastHighlight: HighlightFeedback | null; pendingEvent: string | null; eventHistory: EventRecord[]; eventsThisSeason: number; contractHistory: Contract[]; contractOffers: Contract[]; awards: Award[]; postseason: { champion: string; games: import('./season').GameResult[] } | null; }
-export function createCareer(config: { name: string; role: Role; teamId: string; hand: 'LEFT' | 'RIGHT'; schoolId?: string; style?: number; focus?: string }, seed: number): CareerSave {
+export function createCareer(config: { name: string; role: Role; teamId: string; hand: 'LEFT' | 'RIGHT'; schoolId?: string; style?: number; focus?: string; position?: import('../domain/types').FieldPosition }, seed: number): CareerSave {
   const name = config.name.trim();
   if (!name || [...name].length > 12) throw new Error('이름은 1~12자로 입력해 주세요.');
   if (!TEAMS.some(t => t.id === config.teamId) || !['HITTER', 'PITCHER'].includes(config.role) || !['LEFT', 'RIGHT'].includes(config.hand)) throw new Error('선수 설정을 확인해 주세요.');
@@ -28,6 +29,9 @@ export function createCareer(config: { name: string; role: Role; teamId: string;
   const players = createRoster(teams, rng, !!school);
   const player = make('user', name, config.role, school?.id ?? config.teamId, true);
   player.hand = config.hand;
+  if (config.position && (config.role !== 'HITTER' || !FIELD_POSITIONS.some(p => p.id === config.position))) throw new Error('타자의 수비 포지션을 확인해 주세요.');
+  if (config.role === 'HITTER') player.position = config.position ?? 'DH';
+  else player.pitchingRole = 'RELIEVER';
   if (config.focus && !(config.focus in player.skills)) throw new Error('역할에 맞는 집중 육성 능력치를 선택해 주세요.');
   player.reputation = 0; player.contractYearsLeft = 1; player.rosterStatus = config.role === 'HITTER' ? 'BENCH' : 'STARTER';
   if (school) { player.age = 16; player.salaryCR = 0; player.contractYearsLeft = 0; player.rosterStatus = 'BENCH'; }

@@ -8,6 +8,13 @@ import { Rng } from '../engine/rng';
 import { saveCareer, loadCareer, deleteCareer, getRecoveryNotice } from '../persistence/career';
 afterEach(async () => { await deleteCareer(); });
 const create = () => createCareer({ name: '저장 테스트', role: 'PITCHER', teamId: 'lg', hand: 'RIGHT' }, 77);
+it('보직 필드 없는 저장을 유지하고 잘못된 포지션은 직전 저장으로 복구한다', async () => {
+  const legacy = create(); delete legacy.player.pitchingRole;
+  await saveCareer(legacy); expect(await loadCareer()).toEqual(legacy);
+  const corrupt = structuredClone(legacy); corrupt.player.position = 'RF';
+  await saveCareer(corrupt);
+  expect(await loadCareer()).toEqual(legacy); expect(getRecoveryNotice()).toContain('복구');
+});
 it('진행 중인 시즌을 IndexedDB에서 복구하고 같은 다음 라운드를 생성한다', async () => {
   const save = advanceRound(advanceRound(create()));
   await saveCareer(save);

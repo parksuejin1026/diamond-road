@@ -1,4 +1,6 @@
 export type Role = 'HITTER' | 'PITCHER';
+export type FieldPosition = 'C' | '1B' | '2B' | '3B' | 'SS' | 'LF' | 'CF' | 'RF' | 'DH';
+export interface Player { position?: FieldPosition; pitchingRole?: 'RELIEVER' | 'STARTER'; }
 export type PAResult = 'WALK' | 'STRIKEOUT' | 'SINGLE' | 'DOUBLE' | 'TRIPLE' | 'HOME_RUN' | 'BALL_IN_PLAY_OUT';
 export type Skills = Record<string, number>;
 export interface MinorProgress { minorGames?: number; }

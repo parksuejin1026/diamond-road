@@ -11,6 +11,7 @@ import { calculateAwards } from './awards';
 import { isYouth, finishSchoolYear, nextSchoolYear, seasonRounds, type SchoolCup } from './youth';
 import { createRoster } from './roster';
 import { developPlayer } from './development';
+import { FIELD_POSITIONS, pitchingAssignment, applyFielding } from './positions';
 export interface Standing { teamId: string; w: number; l: number; t: number; }
 export interface GameResult { id: string; round: number; homeTeamId: string; awayTeamId: string; home: number; away: number; innings: number; stage?: string; }
 export interface LeagueSeason { round: number; standings: Standing[]; hitters: Record<string, HitterStats>; pitchers: Record<string, PitcherStats>; results: GameResult[]; }
@@ -28,6 +29,7 @@ export function standings(league: LeagueSeason): Standing[] {
   return [...league.standings].sort((a, b) => rate(b) - rate(a) || b.w - a.w || a.teamId.localeCompare(b.teamId));
 }
 function startGame(fixture: ScheduleGame, save: CareerSave): PendingGame {
+  if (save.player.role === 'PITCHER') save.player.pitchingRole = pitchingAssignment(save);
   const clubs = [fixture.awayTeamId, fixture.homeTeamId].map(id => {
     const roster = save.players.filter(p => p.teamId === id);
     const hitters = roster.filter(p => p.role === 'HITTER').map(p => p.id);
@@ -37,14 +39,16 @@ function startGame(fixture: ScheduleGame, save: CareerSave): PendingGame {
       if (save.player.role === 'HITTER') {
         const userSlot = hitters.indexOf(save.player.id);
         if (absent) hitters.splice(userSlot, 1);
-        else if (save.player.rosterStatus === 'STARTER' && userSlot === 9) [hitters[8], hitters[9]] = [hitters[9], hitters[8]];
-        else if (save.player.rosterStatus !== 'STARTER' && userSlot !== 9) [hitters[userSlot], hitters[9]] = [hitters[9], hitters[userSlot]];
+        else if (save.player.rosterStatus === 'STARTER') {
+          const target = Math.max(0, FIELD_POSITIONS.findIndex(p => p.id === (save.player.position ?? 'DH')));
+          [hitters[target], hitters[userSlot]] = [hitters[userSlot], hitters[target]];
+        }
+        else if (userSlot !== 9) [hitters[userSlot], hitters[9]] = [hitters[9], hitters[userSlot]];
       } else {
         const slot = pitchers.indexOf(save.player.id);
-        const target = isYouth(save) ? 2 : 4;
+        const target = save.player.pitchingRole === 'RELIEVER' ? 5 : isYouth(save) ? 2 : 4;
         [pitchers[slot], pitchers[target]] = [pitchers[target], pitchers[slot]];
         if (absent) pitchers[target] = pitchers[0];
-        else if (isYouth(save) && save.player.rosterStatus === 'BENCH') [pitchers[target], pitchers[5]] = [pitchers[5], pitchers[target]];
       }
     }
     const starter = pitchers[(fixture.round - 1) % (isYouth(save) ? 3 : 5)];
@@ -52,6 +56,11 @@ function startGame(fixture: ScheduleGame, save: CareerSave): PendingGame {
     return { lineup: hitters.slice(0, 9), bench: hitters[9] ?? null, pitchers, active: starter, starter, relief: 0, pitches: 0, index: 0, appeared: [starter] };
   });
   return { fixture, clubs, game: createGame(), pa: 0, responsible: {}, initialOuts: Object.fromEntries(Object.entries(save.league.pitchers).map(([id, p]) => [id, p.outs])), winningPitcher: clubs[0].starter, losingPitcher: clubs[1].starter, prepared: false };
+}
+function sampleGamePA(save: CareerSave, players: Record<string, Player>, rng: Rng): PAResult {
+  const match = currentMatch(save.pendingGame!);
+  const result = sampleAutoPA(players[match.batterId].skills, players[match.pitcherId].skills, rng);
+  return applyFielding(result, match.defense.lineup.map(id => players[id]), rng);
 }
 export function currentMatch(pending: PendingGame) {
   const side = pending.game.half === 'TOP' ? 0 : 1;
@@ -128,9 +137,7 @@ export function advanceRound(original: CareerSave, options: { interactive?: bool
       if (save.pendingGame.pa > 5000) throw new Error('경기 진행 상한을 초과했습니다. 마지막 저장에서 다시 시도해 주세요.');
       prepare(save);
       if (options.interactive !== false && shouldHighlight(save)) { save.phase = 'HIGHLIGHT_READY'; save.highlightCount++; save.rngState = rng.state; return save; }
-      const match = currentMatch(save.pendingGame);
-      const batter = players[match.batterId]; const pitcher = players[match.pitcherId];
-      commitPA(save, sampleAutoPA(batter.skills, pitcher.skills, rng), rng);
+      commitPA(save, sampleGamePA(save, players, rng), rng);
     }
     finishGame(save);
   }
@@ -180,7 +187,7 @@ function simulatePostseason(save: CareerSave, rng: Rng) {
     while (post.pendingGame.game.status !== 'FINAL') {
       if (post.pendingGame.pa > 5000) throw new Error('포스트시즌 경기 상한을 초과했습니다.');
       prepare(post); const match = currentMatch(post.pendingGame);
-      commitPA(post, sampleAutoPA(players[match.batterId].skills, players[match.pitcherId].skills, rng), rng);
+      commitPA(post, sampleGamePA(post, players, rng), rng);
     }
     const score = post.pendingGame.game.score;
     const winner = score.home === score.away ? null : score.home > score.away ? home : away;
@@ -210,9 +217,7 @@ function simulatePostseason(save: CareerSave, rng: Rng) {
 export function resolveHighlight(original: CareerSave, paId: string, result?: PAResult, miniRngState?: number, pitches?: number): CareerSave {
   if (!['HIGHLIGHT_READY', 'MINI_GAME'].includes(original.phase) || !original.pendingGame || pendingPaId(original) !== paId) return original;
   const save = structuredClone(original); const rng = new Rng(miniRngState ?? save.rngState);
-  const match = currentMatch(save.pendingGame!);
-  const batter = save.players.find(p => p.id === match.batterId)!; const pitcher = save.players.find(p => p.id === match.pitcherId)!;
-  const outcome = result ?? sampleAutoPA(batter.skills, pitcher.skills, rng); const before = { ...save.pendingGame!.game.score };
+  const outcome = result ?? sampleGamePA(save, Object.fromEntries(save.players.map(p => [p.id, p])), rng); const before = { ...save.pendingGame!.game.score };
   commitPA(save, outcome, rng, pitches);
   save.lastHighlight = { result: outcome, before, after: { ...save.pendingGame!.game.score }, paId };
   save.rngState = rng.state; save.phase = 'SIMULATING'; return save;
@@ -267,7 +272,7 @@ function simulateSchoolCups(save: CareerSave, rng: Rng): SchoolCup[] {
           while (post.pendingGame.game.status !== 'FINAL') {
             if (post.pendingGame.pa > 5000) throw new Error('전국대회 경기 상한을 초과했습니다.');
             prepare(post); const match = currentMatch(post.pendingGame);
-            commitPA(post, sampleAutoPA(players[match.batterId].skills, players[match.pitcherId].skills, rng), rng);
+            commitPA(post, sampleGamePA(post, players, rng), rng);
           }
           const score = post.pendingGame.game.score;
           if (score.home !== score.away) winner = score.home > score.away ? fixture.homeTeamId : fixture.awayTeamId;

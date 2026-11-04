@@ -23,7 +23,7 @@ it.each(['HITTER', 'PITCHER'] as const)('%s의 정규시즌 720경기 및 기록
   expect(pitchers.reduce((n, p) => n + p.hits, 0)).toBe(hitters.reduce((n, h) => n + h.h, 0));
   expect(pitchers.reduce((n, p) => n + p.wins, 0)).toBe(league.standings.reduce((n, t) => n + t.w, 0));
   expect(pitchers.reduce((n, p) => n + p.losses, 0)).toBe(pitchers.reduce((n, p) => n + p.wins, 0));
-  if (role === 'PITCHER') { expect(league.pitchers.user.gs).toBeGreaterThan(0); expect(league.pitchers.user.gs).toBeLessThanOrEqual(28); }
+  if (role === 'PITCHER') { expect(league.pitchers.user.g).toBeGreaterThan(0); expect(league.pitchers.user.gs).toBeLessThanOrEqual(28); }
   else expect(league.hitters.user.pa).toBeGreaterThan(0);
   expect(save.seasons).toHaveLength(1); expect(advanceRound(save)).toBe(save);
 }, 30000);

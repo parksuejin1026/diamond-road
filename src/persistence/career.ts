@@ -1,6 +1,7 @@
 import type { CareerSave } from '../engine/career';
 import { emptyLeague, emptyHitter, emptyPitcher } from '../engine/season';
 import { migrateTeamNames } from './migrations';
+import { FIELD_POSITIONS } from '../engine/positions';
 async function database(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('diamond-road', 1);
@@ -58,6 +59,8 @@ async function loadCandidate(key: string): Promise<CareerSave | null> {
   if (value.youth && (!Number.isInteger(value.youth.grade) || value.youth.grade < 1 || value.youth.grade > 3 || !Array.isArray(value.youth.history))) throw new Error('고교 커리어 저장이 손상되었습니다.');
   value.players = value.players.map(p => p.id === value.player.id ? value.player : p);
   for (const player of value.players) {
+    if (player.position !== undefined && (player.role !== 'HITTER' || !FIELD_POSITIONS.some(p => p.id === player.position))) throw new Error('수비 포지션 저장 데이터가 손상되었습니다.');
+    if (player.pitchingRole !== undefined && (player.role !== 'PITCHER' || !['RELIEVER', 'STARTER'].includes(player.pitchingRole))) throw new Error('투수 보직 저장 데이터가 손상되었습니다.');
     const keys = player.role === 'HITTER' ? ['contact', 'power', 'eye', 'speed', 'defense', 'mental'] : ['velocity', 'control', 'breaking', 'stamina', 'mental'];
     if (!player.skills || keys.some(k => !validInt(player.skills[k]) || player.skills[k] < 1 || player.skills[k] > 99)) throw new Error('능력치 저장 데이터가 손상되었습니다.');
     const stats = player.role === 'HITTER' ? value.league.hitters[player.id] : value.league.pitchers[player.id];
