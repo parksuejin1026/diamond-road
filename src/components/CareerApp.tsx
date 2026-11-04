@@ -8,6 +8,7 @@ import { deleteCareer, loadCareer, saveCareer, getRecoveryNotice } from '../pers
 import type { Role } from '../domain/types';
 import SeasonPanel from './SeasonPanel';
 import CareerHome from './CareerHome';
+import { focusSkill, selectFocus } from '../engine/development';
 import SchoolPicker from './SchoolPicker';
 import { SCHOOLS, SCHOOL_SOURCE } from '../engine/schools';
 import { isYouth, teamName } from '../engine/youth';
@@ -44,7 +45,7 @@ export default function CareerApp() {
       <div className="skills">{Object.entries(save.player.skills).map(([key, value]) => <div key={key}><span>{labels[key]}</span><strong>{value}</strong><meter min="1" max="99" value={value} aria-label={labels[key]} /></div>)}</div>
       </div>
       {tab === 'home' && <CareerHome save={save} onSeason={() => setTab('season')} />}
-      {tab === 'season' && save.phase === 'PRESEASON' && <><h3>시즌 전 집중 육성</h3><p>{save.trained ? '훈련 완료. 선택한 능력치가 2 올랐습니다.' : '집중할 능력치를 선택하세요. 프리시즌 훈련은 한 번 가능합니다.'}</p>
+      {tab === 'season' && save.phase === 'PRESEASON' && <><label>이번 시즌 집중 육성<select value={focusSkill(save)} disabled={busy} onChange={e => persist(selectFocus(save, e.target.value))}>{Object.keys(save.player.skills).map(key => <option key={key} value={key}>{labels[key]}</option>)}</select></label><p>선택한 능력치는 시즌 종료 시 성장에 추가 반영됩니다. 시즌 시작 전까지 바꿀 수 있습니다.</p><h3>시즌 전 훈련</h3><p>{save.trained ? '훈련 완료. 선택한 능력치가 2 올랐습니다.' : '즉시 올릴 능력치를 선택하세요. 시즌 전 훈련은 한 번 가능합니다.'}</p>
       <div className="actions">{Object.keys(save.player.skills).map(key => <button disabled={busy || save.trained} key={key} onClick={() => persist(train(save, key))}>{labels[key]} +2</button>)}</div></>}
       <div hidden={tab !== 'season' && tab !== 'records'}><SeasonPanel view={tab === 'records' ? 'records' : 'season'} save={save} busy={busy} onChange={setSave} onBusy={setBusy} onError={setError} /></div>
       <div hidden={tab !== 'records'}><details><summary>개막 라운드 대진표</summary>{save.schedule.filter(g => g.round === 1 && (!isYouth(save) || g.homeTeamId === save.player.teamId || g.awayTeamId === save.player.teamId)).map(g => <p key={g.id}>{teamName(g.awayTeamId)} <span className="muted">원정 vs 홈</span> {teamName(g.homeTeamId)}</p>)}</details>

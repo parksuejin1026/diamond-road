@@ -22,8 +22,12 @@ export function finishSchoolYear(save: CareerSave, rng: Rng, cups: SchoolCup[]) 
     if (p && cup.pitcher) for (const k of Object.keys(p) as (keyof PitcherStats)[]) p[k] += cup.pitcher[k];
   }
   const appearances = h ? h.pa : p ? p.outs : 0;
-  const growth = Math.max(2, Math.min(rng.int(4, 7) + (appearances > 30 ? 1 : 0), save.player.potential - overall(save.player)));
-  for (const key of Object.keys(save.player.skills)) save.player.skills[key] = Math.min(99, save.player.skills[key] + growth + (key === youth.focus ? 2 : 0));
+  const room = Math.max(0, save.player.potential - overall(save.player));
+  const growth = rng.int(4, 7) + (appearances > 30 ? 1 : 0);
+  for (const key of Object.keys(save.player.skills)) {
+    const change = Math.max(0, Math.min(room, growth + rng.int(-1, 1) + (key === youth.focus ? 2 : 0)));
+    save.player.skills[key] = Math.min(99, save.player.skills[key] + change);
+  }
   save.players = save.players.map(p => p.id === save.player.id ? save.player : p);
   youth.cups = cups;
   youth.history.push({ year: save.year, age: save.player.age, grade: youth.grade, hitter: h ? { ...h } : null, pitcher: p ? { ...p } : null, beforeOvr, afterOvr: overall(save.player), beforeSkills, afterSkills: { ...save.player.skills }, cups: cups.map(c => ({ name: c.name, champion: c.champion })) });

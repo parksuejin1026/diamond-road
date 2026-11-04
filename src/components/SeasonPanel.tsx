@@ -10,6 +10,7 @@ import { signContract } from '../engine/contracts';
 import { legacyGrade } from '../engine/awards';
 import StatsDetails from './StatsDetails';
 import SeasonNarrative from './SeasonNarrative';
+import DevelopmentReport from './DevelopmentReport';
 export default function SeasonPanel({ save, view = 'season', busy, onChange, onBusy, onError }: { save: CareerSave; view?: 'season' | 'records'; busy: boolean; onChange: (save: CareerSave) => void; onBusy: (busy: boolean) => void; onError: (error: string) => void }) {
   const rounds = seasonRounds(save); const youth = isYouth(save);
   const groupIds = new Set(save.schedule.filter(g => g.homeTeamId === save.player.teamId || g.awayTeamId === save.player.teamId).flatMap(g => [g.homeTeamId, g.awayTeamId]));
@@ -55,6 +56,7 @@ export default function SeasonPanel({ save, view = 'season', busy, onChange, onB
   })[0];
   if (save.phase === 'DRAFT') return <section className="season"><YouthPanel save={save} busy={busy} update={update} /></section>;
   return <section className="season"><div hidden={view !== 'season'}>
+    <DevelopmentReport save={save} />
     <YouthPanel save={save} busy={busy} update={update} />
     <h3>{save.phase === 'RETIRED' ? '커리어 기록' : save.phase === 'SEASON_RESULT' ? youth ? '고교 시즌 결산' : '정규 시즌 결산' : youth ? '고교 주말리그' : '정규 시즌'}</h3>
     <p>{save.year}년 · {save.league.round} / {rounds} 라운드 · {save.league.results.length} / {save.schedule.length} 경기</p>

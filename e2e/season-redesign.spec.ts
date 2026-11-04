@@ -10,6 +10,8 @@ test('홈 탭과 시즌 전체 자동 진행, 저장 복원', async ({ page }) =
   await expect(page.getByRole('heading', { name: '새로운 시즌' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: '커리어 메뉴' })).toBeVisible();
   await page.getByRole('button', { name: '시즌 준비하기 →' }).click();
+  await page.getByRole('combobox', { name: '이번 시즌 집중 육성' }).selectOption('defense');
+  await expect(page.getByRole('combobox', { name: '이번 시즌 집중 육성' })).toBeEnabled();
   await page.getByRole('button', { name: '수비 +2', exact: true }).click();
   await page.getByRole('button', { name: '시즌 전체 자동 진행 →' }).click();
   await expect(page.getByRole('button', { name: '다음 학년으로 →' })).toBeVisible({ timeout: 60000 });

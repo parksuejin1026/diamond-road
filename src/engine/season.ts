@@ -10,6 +10,7 @@ import { createOffers } from './contracts';
 import { calculateAwards } from './awards';
 import { isYouth, finishSchoolYear, nextSchoolYear, seasonRounds, type SchoolCup } from './youth';
 import { createRoster } from './roster';
+import { developPlayer } from './development';
 export interface Standing { teamId: string; w: number; l: number; t: number; }
 export interface GameResult { id: string; round: number; homeTeamId: string; awayTeamId: string; home: number; away: number; innings: number; stage?: string; }
 export interface LeagueSeason { round: number; standings: Standing[]; hitters: Record<string, HitterStats>; pitchers: Record<string, PitcherStats>; results: GameResult[]; }
@@ -143,6 +144,7 @@ export function advanceRound(original: CareerSave, options: { interactive?: bool
   } else if (round === rounds) {
     save.awards = calculateAwards(save.league, save.players);
     save.postseason = simulatePostseason(save, rng);
+    developPlayer(save, rng);
     if ((save.player.contractYearsLeft ?? 1) <= 1 && save.player.age < 38) save.contractOffers = createOffers(save, rng);
     save.rngState = rng.state;
     save.phase = save.player.age >= 38 ? 'RETIRED' : 'SEASON_RESULT';
@@ -220,7 +222,8 @@ export function nextSeason(save: CareerSave): CareerSave {
   if (isYouth(save)) return nextSchoolYear(save);
   if (save.player.age >= 38) return { ...save, phase: 'RETIRED' };
   const rng = new Rng(save.rngState); const player = structuredClone(save.player);
-  const growth = player.age < 25 ? rng.int(1, 3) : player.age < 30 ? rng.int(0, 2) : player.age < 33 ? rng.int(-1, 1) : -rng.int(1, 3);
+  // Old result saves have not received season-end growth; preserve their one-time transition.
+  const growth = save.development?.year === save.year ? 0 : player.age < 25 ? rng.int(1, 3) : player.age < 30 ? rng.int(0, 2) : player.age < 33 ? rng.int(-1, 1) : -rng.int(1, 3);
   const capped = growth > 0 ? Math.max(0, Math.min(growth, player.potential - overall(player))) : growth;
   for (const key of Object.keys(player.skills)) player.skills[key] = Math.max(1, Math.min(99, player.skills[key] + capped));
   player.age++; player.fatigue = 0; player.minorGames = 0;

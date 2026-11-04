@@ -31,6 +31,7 @@ test('시즌 종료·이적·다음 시즌을 실제 화면에서 저장한다',
   let save = createCareer({ name: '계약 신인', role: 'HITTER', teamId: 'lg', hand: 'RIGHT' }, 7);
   while (save.phase !== 'SEASON_RESULT') save = advanceRound(save, { interactive: false, autoChoices: true });
   await installSave(page, save);
+  await expect(page.getByRole('region', { name: '시즌 성장 결산' })).toBeVisible();
   await page.locator('.offer').nth(1).click();
   await expect(page.locator('.offer')).toHaveCount(0);
   await page.getByRole('button', { name: '성장 반영 · 다음 시즌 →' }).click();
