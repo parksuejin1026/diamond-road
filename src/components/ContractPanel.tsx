@@ -1,0 +1,10 @@
+import type { CareerSave } from '../engine/career';
+import { faProgress, negotiateSalary, signContract } from '../engine/contracts';
+import { isYouth, teamName } from '../engine/youth';
+export default function ContractPanel({ save, busy, update }: { save: CareerSave; busy: boolean; update: (save: CareerSave) => void }) {
+  if (isYouth(save) || save.phase === 'DRAFT' || save.phase === 'RETIRED') return null;
+  const progress = faProgress(save);
+  return <section className="notice" aria-label="선수 계약"><p className="eyebrow">CONTRACT · OFFSEASON</p><h3>{save.contractOffers.length ? progress.eligible ? 'FA · 잔류와 새로운 도전' : '소속 구단과 연봉 재계약' : '현재 계약'}</h3><p>{teamName(save.player.teamId)} · 연봉 {save.player.salaryCR.toLocaleString()} CR · {save.player.contractYearsLeft ?? 1}시즌{save.phase === 'SEASON_RESULT' ? ' (종료 시즌 포함)' : ' 잔여'}<br />명성 {save.player.reputation ?? 0} · FA 인정 기간 {progress.earned} / {progress.required}일</p><p className="footnote">등록 기간은 1군 활동 라운드를 환산한 게임 기준입니다. FA 전에는 소속 구단과 재계약합니다.</p>
+    {save.contractOffers.length > 0 && <><p>계약하지 않고 다음 시즌으로 넘어가면 소속 구단의 제시 연봉으로 1년 재계약합니다. FA 자격은 유지됩니다.</p>{save.contractOffers.map((offer, i) => <div className="contractChoice" key={`${offer.teamId}-${i}`}><button className="offer" disabled={busy} onClick={() => update(signContract(save, i))}><strong>{teamName(offer.teamId)} · {offer.kind === 'FA' ? 'FA 계약' : offer.kind === 'RENEWAL' ? progress.eligible ? 'FA 유보 · 1년 재계약' : '연봉 재계약' : '기존 제안'}</strong><span>연봉 {offer.salaryCR.toLocaleString()} CR × {offer.years}년 · 계약금 {(offer.signingBonusCR ?? 0).toLocaleString()} CR</span><span>보장 총액 {(offer.salaryCR * offer.years + (offer.signingBonusCR ?? 0)).toLocaleString()} CR · {save.player.role === 'PITCHER' ? '보직은 등판 성적으로 결정' : offer.opportunity === 'STARTER' ? '주전 기회' : '벤치 경쟁'}</span></button><button className="skip" disabled={busy || offer.negotiated} onClick={() => update(negotiateSalary(save, i))} aria-label={`${teamName(offer.teamId)} ${offer.kind === 'FA' ? 'FA' : '재계약'} 연봉 협상`}>{offer.negotiated ? '협상 반영 완료' : '명성으로 연봉 협상'}</button></div>)}</>}
+  </section>;
+}

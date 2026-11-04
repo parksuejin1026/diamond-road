@@ -72,6 +72,6 @@ export function signDraft(original: CareerSave): CareerSave {
   const slot = save.players.findIndex(p => p.id === draft.teamId + '-' + (save.player.role === 'HITTER' ? 9 : 14)); save.players[slot] = save.player;
   save.year++; save.schedule = createSchedule(TEAMS.map(t => t.id), rng.state); save.league = emptyLeague(save.players);
   save.phase = 'PRESEASON'; save.trained = false; save.highlightCount = 0; save.pendingGame = null; save.lastHighlight = null; save.pendingEvent = null; save.eventsThisSeason = 0; save.awards = []; save.postseason = null;
-  save.contractHistory = [{ year: save.year, teamId: draft.teamId, salaryCR: save.player.salaryCR, years: 1, opportunity: save.player.role === 'HITTER' ? 'BENCH' : 'STARTER' }]; save.rngState = rng.state;
+  save.contractHistory = [{ year: save.year, teamId: draft.teamId, salaryCR: save.player.salaryCR, years: 1, opportunity: save.player.role === 'HITTER' ? 'BENCH' : 'STARTER', kind: 'DRAFT', signingBonusCR: draft.round ? draft.signingBonusCR : 0 }]; save.rngState = rng.state;
   return save;
 }

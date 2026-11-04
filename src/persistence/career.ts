@@ -54,6 +54,10 @@ async function loadCandidate(key: string): Promise<CareerSave | null> {
   if (['HIGHLIGHT_READY', 'MINI_GAME'].includes(value.phase) && !value.pendingGame) throw new Error('중요 상황 저장 데이터가 손상되었습니다.');
   if (!value.league || !Number.isInteger(value.league.round) || value.league.round < 0 || value.league.round > Math.max(...value.schedule.map(g => g.round)) || !Array.isArray(value.league.results) || !Array.isArray(value.seasons) || !value.league.hitters || !value.league.pitchers || !Array.isArray(value.league.standings)) throw new Error('시즌 저장 데이터가 손상되었습니다.');
   const validInt = (n: unknown) => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
+  if (value.contractService) {
+    const service = value.contractService;
+    if (![service.days, service.faUses, service.lastFADays, service.activeRounds].every(validInt) || service.lastFADays > service.days || service.activeRounds > Math.max(...value.schedule.map(g => g.round)) || (service.countedYear !== undefined && (!validInt(service.countedYear) || service.countedYear > value.year))) throw new Error('계약 등록 기간 저장 데이터가 손상되었습니다.');
+  }
   const playerIds = new Set(value.players.map(p => p.id));
   if (value.players.length !== value.league.standings.length * 18 || playerIds.size !== value.players.length || !playerIds.has(value.player.id) || !validInt(value.rngState) || !validInt(value.year) || !validInt(value.highlightCount) || value.highlightCount > 3) throw new Error('선수 저장 데이터가 손상되었습니다.');
   if (value.youth && (!Number.isInteger(value.youth.grade) || value.youth.grade < 1 || value.youth.grade > 3 || !Array.isArray(value.youth.history))) throw new Error('고교 커리어 저장이 손상되었습니다.');

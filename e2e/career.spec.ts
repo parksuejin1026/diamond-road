@@ -27,8 +27,9 @@ async function readSave(page: Page): Promise<CareerSave> {
     open.onsuccess = () => { const db = open.result; const tx = db.transaction('saves'); const request = tx.objectStore('saves').get('active'); tx.oncomplete = () => { db.close(); resolve(request.result); }; tx.onerror = () => reject(tx.error); };
   }));
 }
-test('시즌 종료·이적·다음 시즌을 실제 화면에서 저장한다', async ({ page }) => {
+test('FA 자격 후 이적·다음 시즌을 실제 화면에서 저장한다', async ({ page }) => {
   let save = createCareer({ name: '계약 신인', role: 'HITTER', teamId: 'lg', hand: 'RIGHT' }, 7);
+  save.contractService = { days: 1160, faUses: 0, lastFADays: 0, activeRounds: 0 };
   while (save.phase !== 'SEASON_RESULT') save = advanceRound(save, { interactive: false, autoChoices: true });
   await installSave(page, save);
   await expect(page.getByRole('region', { name: '시즌 성장 결산' })).toBeVisible();
@@ -39,6 +40,24 @@ test('시즌 종료·이적·다음 시즌을 실제 화면에서 저장한다',
   await expect(page).toHaveURL(/\/career\/$/);
   await page.reload(); await page.getByRole('button', { name: '시즌 준비하기 →' }).click(); await expect(page.getByText(/2027년 · 0 \/ 144/)).toBeVisible();
   expect((await readSave(page)).player.teamId).not.toBe('lg');
+});
+test('FA 전 연봉 협상과 자동 잔류 재계약을 저장한다', async ({ page }) => {
+  let save = createCareer({ name: '잔류 선수', role: 'HITTER', teamId: 'lg', hand: 'RIGHT' }, 9);
+  while (save.phase !== 'SEASON_RESULT') save = advanceRound(save, { interactive: false, events: false });
+  await installSave(page, save);
+  await expect(page.getByRole('heading', { name: '소속 구단과 연봉 재계약' })).toBeVisible();
+  await expect(page.locator('.offer')).toHaveCount(1);
+  await page.getByRole('button', { name: /재계약 연봉 협상/ }).click();
+  await expect(page.getByRole('button', { name: /재계약 연봉 협상/ })).toBeDisabled();
+  const negotiated = (await readSave(page)).contractOffers[0].salaryCR;
+  expect(negotiated).toBeGreaterThan(save.contractOffers[0].salaryCR);
+  await page.getByRole('button', { name: '성장 반영 · 다음 시즌 →' }).click();
+  await expect(page.getByText('2027년 · 0 / 144', { exact: false })).toBeVisible();
+  const next = await readSave(page);
+  expect(next.player.teamId).toBe('lg'); expect(next.player.salaryCR).toBe(negotiated);
+  expect(next.contractHistory.at(-1)?.kind).toBe('RENEWAL');
+  await page.reload(); await expect(page.getByRole('button', { name: '시즌 준비하기 →' })).toBeVisible();
+  expect((await readSave(page)).player.salaryCR).toBe(negotiated);
 });
 test('35세 조기 은퇴를 선택하면 명예의 전당에 기록을 보존한다', async ({ page }) => {
   let save = createCareer({ name: '은퇴 선수', role: 'PITCHER', teamId: 'lg', hand: 'RIGHT' }, 4);

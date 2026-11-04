@@ -13,12 +13,13 @@ it('이벤트는 역할을 지키고 선택이 한 번만 반영된다', () => {
 });
 it('포스트시즌은 정규 기록과 분리되고 이적 후 구단별 선수 수를 보존한다', () => {
   let save = createCareer({ name: '계약', role: 'PITCHER', teamId: 'lg', hand: 'RIGHT' }, 5);
+  save.contractService = { days: 1160, faUses: 0, lastFADays: 0, activeRounds: 0 };
   while (save.phase !== 'SEASON_RESULT') save = advanceRound(save, { interactive: false, autoChoices: true });
   expect(save.postseason?.games.length).toBeGreaterThanOrEqual(7);
   expect(new Set(save.postseason?.games.map(g => g.stage))).toEqual(new Set(['와일드카드', '준플레이오프', '플레이오프', '한국시리즈']));
   expect(save.awards).toEqual(calculateAwards(save.league, save.players));
   expect(save.league.results).toHaveLength(720);
-  expect(save.contractOffers).toHaveLength(3);
+  expect(save.contractOffers).toHaveLength(4);
   const moved = signContract(save, 1);
   expect(moved.player.teamId).not.toBe(save.player.teamId);
   expect(moved.contractHistory).toHaveLength(2);

@@ -6,7 +6,7 @@ import { isYouth, teamName, seasonRounds } from '../engine/youth';
 import YouthPanel from './YouthPanel';
 import { hitterRates, pitcherRates } from '../domain/calculators';
 import { saveCareer } from '../persistence/career';
-import { signContract } from '../engine/contracts';
+import ContractPanel from './ContractPanel';
 import { legacyGrade } from '../engine/awards';
 import StatsDetails from './StatsDetails';
 import SeasonNarrative from './SeasonNarrative';
@@ -65,7 +65,7 @@ export default function SeasonPanel({ save, view = 'season', busy, onChange, onB
     <StatsDetails hitter={h} pitcher={p} />
     <SeasonNarrative save={save} />
     {['PRESEASON', 'SIMULATING', 'HIGHLIGHT_READY', 'MINI_GAME'].includes(save.phase) && <div className="actions"><button className="primary" disabled={busy} onClick={() => run(rounds)}>{progress !== null ? `시즌 진행 중 · ${progress} / ${rounds}` : '시즌 전체 자동 진행 →'}</button>{progress !== null && <button onClick={() => { stop.current = true; }}>저장 후 일시정지</button>}</div>}
-    {save.phase === 'SEASON_RESULT' && save.contractOffers.length > 0 && <div className="notice"><h3>다음 계약을 선택하세요</h3><p>연봉·계약 기간·출전 기회를 비교하세요. 선택하지 않으면 현재 팀과 1년 3,000 CR 기본 계약으로 진행합니다.</p>{save.contractOffers.map((offer, i) => <button className="offer" key={offer.teamId} disabled={busy} onClick={() => update(signContract(save, i))}><strong>{teamName(offer.teamId)}</strong><span>{offer.salaryCR.toLocaleString()} CR · {offer.years}년 · {offer.opportunity === 'STARTER' ? '주전 기회' : '벤치 경쟁'}</span></button>)}</div>}
+    {save.phase === 'SEASON_RESULT' && !youth && <ContractPanel save={save} busy={busy} update={update} />}
     {save.phase === 'SEASON_RESULT' && <button className="primary" disabled={busy} onClick={proceed}>{save.player.age >= 38 ? '은퇴 기록 보기' : youth ? save.youth!.grade === 3 ? '신인 드래프트 참가 →' : '다음 학년으로 →' : '성장 반영 · 다음 시즌 →'}</button>}
     {save.phase === 'SEASON_RESULT' && save.player.age >= 35 && <button className="danger" disabled={busy} onClick={() => { if (window.confirm('이번 시즌을 마지막으로 은퇴할까요?')) update(retire(save)); }}>이번 시즌을 끝으로 은퇴</button>}
     {save.phase === 'RETIRED' && <div className="notice"><p className="eyebrow">HALL OF FAME</p><h2>{legacyGrade(save.seasons).grade}</h2><p>{save.seasons.length}시즌 · 커리어 점수 {legacyGrade(save.seasons).score.toLocaleString()}</p><p>{save.seasons.filter(s => s.championship).length}회 우승 · {save.seasons.reduce((n, s) => n + (s.awards?.length ?? 0), 0)}회 개인상</p></div>}
@@ -77,7 +77,7 @@ export default function SeasonPanel({ save, view = 'season', busy, onChange, onB
     <div className="tableWrap"><table><caption>{youth ? '내 권역 순위' : 'KBO 정규 시즌 순위'}</caption><thead><tr><th>순위</th><th>구단</th><th>승</th><th>패</th><th>무</th><th>승률</th></tr></thead><tbody>{standings(save.league).filter(t => !youth || groupIds.has(t.teamId)).map((t, i) => <tr key={t.teamId} className={t.teamId === save.player.teamId ? 'myTeam' : ''}><td>{i + 1}</td><th scope="row">{teamName(t.teamId)}</th><td>{t.w}</td><td>{t.l}</td><td>{t.t}</td><td>{t.w + t.l ? (t.w / (t.w + t.l)).toFixed(3) : '.000'}</td></tr>)}</tbody></table></div>
     {save.league.results.length > 0 && <details><summary>최근 우리 팀 경기</summary>{save.league.results.filter(g => g.homeTeamId === save.player.teamId || g.awayTeamId === save.player.teamId).slice(-5).reverse().map(g => <p key={g.id}>{g.round}R · {teamName(g.awayTeamId)} {g.away} : {g.home} {teamName(g.homeTeamId)} · {g.innings}회</p>)}</details>}
     {save.seasons.length > 0 && <details open={save.phase === 'RETIRED'}><summary>완료 시즌 · 통산 기록 ({save.seasons.length}시즌)</summary><p>{save.player.role === 'HITTER' ? `${totalH.h}안타 · ${totalH.hr}홈런 · ${totalH.rbi}타점 · AVG ${hitterRates(totalH).avg.toFixed(3)}` : `${totalP.wins}승 ${totalP.losses}패 · ${totalP.so}탈삼진 · ERA ${pitcherRates(totalP).era?.toFixed(2) ?? '—'}`}</p>{save.seasons.map(s => <p key={s.year}>{s.year} · {s.age}세 · {s.rank}위 · OVR {s.ovr} · {s.hitter ? `${s.hitter.h}안타 / ${s.hitter.hr}홈런` : `${s.pitcher?.wins}승 / ${s.pitcher?.so}탈삼진`}</p>)}</details>}
-    <details><summary>계약 이력</summary>{save.contractHistory.map((c, i) => <p key={i}>{c.year} · {teamName(c.teamId)} · {c.salaryCR.toLocaleString()} CR · {c.years}년</p>)}</details>
+    <details><summary>계약 이력</summary>{save.contractHistory.map((c, i) => <p key={i}>{c.year} · {teamName(c.teamId)} · {c.kind === 'FA' ? 'FA' : c.kind === 'DRAFT' ? '프로 입단' : c.kind === 'RENEWAL' ? '연봉 재계약' : '기존 계약'} · 연봉 {c.salaryCR.toLocaleString()} CR · {c.years}년 · 계약금 {(c.signingBonusCR ?? 0).toLocaleString()} CR</p>)}</details>
     <p className="footnote">구원승은 최종 역전 시점의 투수에 부여하는 간소화 규칙을 적용합니다.</p>
   </div></section>;
 }

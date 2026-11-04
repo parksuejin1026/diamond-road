@@ -8,6 +8,14 @@ import { Rng } from '../engine/rng';
 import { saveCareer, loadCareer, deleteCareer, getRecoveryNotice } from '../persistence/career';
 afterEach(async () => { await deleteCareer(); });
 const create = () => createCareer({ name: '저장 테스트', role: 'PITCHER', teamId: 'lg', hand: 'RIGHT' }, 77);
+it('계약 등록 기간과 협상 상태를 보존하고 손상 시 복구한다', async () => {
+  const valid = create(); valid.phase = 'SEASON_RESULT';
+  valid.contractService = { days: 145, faUses: 0, lastFADays: 0, activeRounds: 144, countedYear: 2026 };
+  valid.contractOffers = createOffers(valid, new Rng(1)); valid.contractOffers[0].negotiated = true;
+  await saveCareer(valid); expect(await loadCareer()).toEqual(valid);
+  const corrupt = structuredClone(valid); corrupt.contractService!.lastFADays = 999;
+  await saveCareer(corrupt); expect(await loadCareer()).toEqual(valid);
+});
 it('보직 필드 없는 저장을 유지하고 잘못된 포지션은 직전 저장으로 복구한다', async () => {
   const legacy = create(); delete legacy.player.pitchingRole;
   await saveCareer(legacy); expect(await loadCareer()).toEqual(legacy);

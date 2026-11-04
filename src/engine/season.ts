@@ -6,7 +6,7 @@ import { sampleAutoPA } from './atBat';
 import { Rng } from './rng';
 import { TEAMS, createSchedule } from './schedule';
 import { maybeEvent, chooseEvent } from './events';
-import { createOffers } from './contracts';
+import { createOffers, recordContractRound, finishContractYear, signContract, contractService } from './contracts';
 import { calculateAwards } from './awards';
 import { isYouth, finishSchoolYear, nextSchoolYear, seasonRounds, type SchoolCup } from './youth';
 import { createRoster } from './roster';
@@ -142,6 +142,7 @@ export function advanceRound(original: CareerSave, options: { interactive?: bool
     finishGame(save);
   }
   save.league.round = round;
+  recordContractRound(save);
   updateCondition(save, rng);
   if (round < rounds && options.events !== false) maybeEvent(save, rng);
   save.rngState = rng.state;
@@ -152,6 +153,7 @@ export function advanceRound(original: CareerSave, options: { interactive?: bool
     save.awards = calculateAwards(save.league, save.players);
     save.postseason = simulatePostseason(save, rng);
     developPlayer(save, rng);
+    finishContractYear(save);
     if ((save.player.contractYearsLeft ?? 1) <= 1 && save.player.age < 38) save.contractOffers = createOffers(save, rng);
     save.rngState = rng.state;
     save.phase = save.player.age >= 38 ? 'RETIRED' : 'SEASON_RESULT';
@@ -226,6 +228,14 @@ export function nextSeason(save: CareerSave): CareerSave {
   if (save.phase !== 'SEASON_RESULT') return save;
   if (isYouth(save)) return nextSchoolYear(save);
   if (save.player.age >= 38) return { ...save, phase: 'RETIRED' };
+  if (save.contractOffers.length) {
+    const staying = save.contractOffers.findIndex(offer => offer.teamId === save.player.teamId && offer.kind === 'RENEWAL');
+    const fallback = staying >= 0 ? staying : save.contractOffers.findIndex(offer => offer.teamId === save.player.teamId);
+    if (fallback < 0) throw new Error('다음 시즌 계약을 먼저 선택해 주세요.');
+    const signed = signContract(save, fallback);
+    if (signed === save) throw new Error('계약 자격을 확인한 후 제안을 선택해 주세요.');
+    save = signed;
+  }
   const rng = new Rng(save.rngState); const player = structuredClone(save.player);
   // Old result saves have not received season-end growth; preserve their one-time transition.
   const growth = save.development?.year === save.year ? 0 : player.age < 25 ? rng.int(1, 3) : player.age < 30 ? rng.int(0, 2) : player.age < 33 ? rng.int(-1, 1) : -rng.int(1, 3);
@@ -235,7 +245,6 @@ export function nextSeason(save: CareerSave): CareerSave {
   player.health = Math.min(100, player.health + 15); player.injuredUntil = 0;
   player.contractYearsLeft = Math.max(1, (player.contractYearsLeft ?? 1) - 1);
   const contractHistory = [...save.contractHistory];
-  if (save.contractOffers.length) { player.salaryCR = 3000; player.contractYearsLeft = 1; contractHistory.push({ teamId: player.teamId, salaryCR: 3000, years: 1, year: save.year + 1, opportunity: player.role === 'HITTER' ? 'BENCH' : 'STARTER' }); }
   if (player.rosterStatus === 'INJURED') player.rosterStatus = player.role === 'HITTER' ? 'BENCH' : 'STARTER';
   const recentH = save.league.hitters[player.id]; const recentP = save.league.pitchers[player.id];
   const struggled = recentH ? recentH.ab >= 60 && recentH.h / recentH.ab < .18 : recentP ? recentP.outs >= 60 && recentP.er * 27 / recentP.outs > 7 : false;
@@ -249,7 +258,7 @@ export function nextSeason(save: CareerSave): CareerSave {
   });
   const missingTeams = TEAMS.filter(t => !players.some(p => p.teamId === t.id));
   players.push(...createRoster(missingTeams, rng));
-  return { ...save, year: save.year + 1, player, players, trained: false, phase: 'PRESEASON', rngState: rng.state, league: emptyLeague(players), schedule: createSchedule(TEAMS.map(t => t.id), rng.state), pendingGame: null, highlightCount: 0, lastHighlight: null, pendingEvent: null, eventsThisSeason: 0, contractOffers: [], awards: [], postseason: null, contractHistory };
+  return { ...save, contractService: { ...contractService(save), activeRounds: 0 }, year: save.year + 1, player, players, trained: false, phase: 'PRESEASON', rngState: rng.state, league: emptyLeague(players), schedule: createSchedule(TEAMS.map(t => t.id), rng.state), pendingGame: null, highlightCount: 0, lastHighlight: null, pendingEvent: null, eventsThisSeason: 0, contractOffers: [], awards: [], postseason: null, contractHistory };
 }
 export function retire(save: CareerSave): CareerSave { return save.phase === 'SEASON_RESULT' && save.player.age >= 35 ? { ...save, phase: 'RETIRED', contractOffers: [] } : save; }
 function simulateSchoolCups(save: CareerSave, rng: Rng): SchoolCup[] {
