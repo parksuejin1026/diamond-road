@@ -1,0 +1,631 @@
+{
+  "source": "https://www.korea-baseball.com/info/team/team_list?kind_cd=31&season=2026",
+  "season": 2026,
+  "checkedAt": "2026-11-04",
+  "teams": [
+    {
+      "id": "school-1702",
+      "name": "GD챌린저스BC(U-18)",
+      "region": "서울",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-193",
+      "name": "강릉고",
+      "region": "강원",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-575",
+      "name": "강원고",
+      "region": "강원",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-186",
+      "name": "개성고",
+      "region": "부산",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1543",
+      "name": "거제BC(U-18)",
+      "region": "경남",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-147",
+      "name": "경기고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1065",
+      "name": "경기상업고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-916",
+      "name": "경기항공고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-176",
+      "name": "경남고",
+      "region": "부산",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-153",
+      "name": "경동고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1453",
+      "name": "경민IT고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-185",
+      "name": "경북고",
+      "region": "대구",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-144",
+      "name": "경주고",
+      "region": "경북",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-141",
+      "name": "공주고",
+      "region": "충남",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1700",
+      "name": "광남고BC",
+      "region": "전남",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-151",
+      "name": "광주동성고",
+      "region": "광주",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-148",
+      "name": "광주제일고",
+      "region": "광주",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-156",
+      "name": "광주진흥고",
+      "region": "광주",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1552",
+      "name": "군산상일고",
+      "region": "전북",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1699",
+      "name": "금남고",
+      "region": "경남",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1903",
+      "name": "김포과학기술고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-150",
+      "name": "김해고",
+      "region": "경남",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-180",
+      "name": "대구고",
+      "region": "대구",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1667",
+      "name": "대구북구SC(U-18)",
+      "region": "대구",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-145",
+      "name": "대구상원고",
+      "region": "대구",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-171",
+      "name": "대전고",
+      "region": "대전",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-821",
+      "name": "대전제일고",
+      "region": "대전",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-157",
+      "name": "덕수고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-816",
+      "name": "도개고",
+      "region": "경북",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-161",
+      "name": "동산고",
+      "region": "인천",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-592",
+      "name": "라온고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-152",
+      "name": "마산고",
+      "region": "경남",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-155",
+      "name": "마산용마고",
+      "region": "경남",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1890",
+      "name": "명지BC(U-18)",
+      "region": "서울",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-591",
+      "name": "물금고",
+      "region": "경남",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1449",
+      "name": "밀양BC(U-18)",
+      "region": "경남",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-160",
+      "name": "배명고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-164",
+      "name": "배재고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-593",
+      "name": "백송고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-182",
+      "name": "부경고",
+      "region": "부산",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-191",
+      "name": "부산고",
+      "region": "부산",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-188",
+      "name": "부산공업고",
+      "region": "부산",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1900",
+      "name": "부원고야구단",
+      "region": "경기",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-142",
+      "name": "북일고",
+      "region": "충남",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-927",
+      "name": "비봉고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1701",
+      "name": "상동고",
+      "region": "강원",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1899",
+      "name": "상우고야구단",
+      "region": "경기",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-1761",
+      "name": "서울HG야구단(U-18)",
+      "region": "서울",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-1759",
+      "name": "서울HK야구단(U-18)",
+      "region": "서울",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-167",
+      "name": "서울고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1158",
+      "name": "서울동산고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-555",
+      "name": "서울디자인고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1826",
+      "name": "서울아이티고BC",
+      "region": "서울",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-1451",
+      "name": "서울자동차고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1164",
+      "name": "서울컨벤션고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-170",
+      "name": "선린인터넷고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-194",
+      "name": "설악고",
+      "region": "강원",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-172",
+      "name": "성남고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-138",
+      "name": "세광고",
+      "region": "충북",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1827",
+      "name": "세명컴퓨터고야구단",
+      "region": "서울",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-1696",
+      "name": "세원고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1854",
+      "name": "세종BC(U-18)",
+      "region": "세종",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-519",
+      "name": "소래고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1901",
+      "name": "수원야구단(U-18)",
+      "region": "경기",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-295",
+      "name": "순천효천고BC",
+      "region": "전남",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-175",
+      "name": "신일고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-586",
+      "name": "신흥고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1542",
+      "name": "아산BC(U-18)",
+      "region": "충남",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-184",
+      "name": "안산공업고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1338",
+      "name": "야로고BC",
+      "region": "경남",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-178",
+      "name": "야탑고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-818",
+      "name": "예일메디텍고",
+      "region": "경북",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-917",
+      "name": "우신고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1878",
+      "name": "울산BC(U-18)",
+      "region": "울산",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-195",
+      "name": "원주고",
+      "region": "강원",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-189",
+      "name": "유신고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-556",
+      "name": "율곡고야구단",
+      "region": "경기",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-1763",
+      "name": "의성고",
+      "region": "경북",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1683",
+      "name": "의왕BC(U-18)",
+      "region": "경기",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-521",
+      "name": "인상고",
+      "region": "전북",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-192",
+      "name": "인창고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-165",
+      "name": "인천고",
+      "region": "인천",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-547",
+      "name": "장안고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-179",
+      "name": "장충고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1828",
+      "name": "전북인공지능고",
+      "region": "전북",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-162",
+      "name": "전주고",
+      "region": "전북",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-169",
+      "name": "제물포고",
+      "region": "인천",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-379",
+      "name": "제주고",
+      "region": "제주",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-183",
+      "name": "중앙고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-775",
+      "name": "진영고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1937",
+      "name": "창녕SC(U-18)",
+      "region": "경남",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-1450",
+      "name": "창원공고야구단",
+      "region": "경남",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-1697",
+      "name": "천안CSBC(U-18)",
+      "region": "충남",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-815",
+      "name": "청담고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-187",
+      "name": "청원고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-421",
+      "name": "청주고",
+      "region": "충북",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-181",
+      "name": "충암고",
+      "region": "서울",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-407",
+      "name": "충훈고",
+      "region": "경기",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-537",
+      "name": "포항제철고",
+      "region": "경북",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-1637",
+      "name": "한광BC(U-18)",
+      "region": "서울",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-1694",
+      "name": "한국마사고BC",
+      "region": "전북",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-1546",
+      "name": "화성동탄B(U-18)",
+      "region": "경기",
+      "type": "U18_CLUB"
+    },
+    {
+      "id": "school-378",
+      "name": "화순고",
+      "region": "전남",
+      "type": "SCHOOL"
+    },
+    {
+      "id": "school-190",
+      "name": "휘문고",
+      "region": "서울",
+      "type": "SCHOOL"
+    }
+  ]
+}

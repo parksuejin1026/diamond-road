@@ -1,0 +1,36 @@
+{
+  "name": "diamond-road",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "node scripts/serve-static.mjs",
+    "test:e2e": "npm run build && playwright test",
+    "test:stress": "vitest run --config vitest.stress.config.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "next": "^16.4.5",
+    "phaser": "^3.90.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@tailwindcss/postcss": "^4.3.4",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "fake-indexeddb": "^6.2.7",
+    "tailwindcss": "^4.3.4",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}
