@@ -1,0 +1,42 @@
+import { expect, test } from '@playwright/test';
+import { createCareer } from '../src/engine/career';
+import { advanceRound } from '../src/engine/season';
+test('홈 탭과 시즌 전체 자동 진행, 저장 복원', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto('./');
+  await page.getByRole('textbox', { name: '선수 이름' }).fill('새로운 시즌');
+  await page.getByRole('button', { name: '나의 커리어 시작하기 →' }).click();
+  await expect(page.getByRole('heading', { name: '새로운 시즌' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: '커리어 메뉴' })).toBeVisible();
+  await page.getByRole('button', { name: '시즌 준비하기 →' }).click();
+  await page.getByRole('button', { name: '수비 +2', exact: true }).click();
+  await page.getByRole('button', { name: '시즌 전체 자동 진행 →' }).click();
+  await expect(page.getByRole('button', { name: '다음 학년으로 →' })).toBeVisible({ timeout: 60000 });
+  await expect(page.getByRole('button', { name: '직접 플레이', exact: true })).toHaveCount(0);
+  await expect(page.getByText('CAREER EVENT')).toHaveCount(0);
+  await page.reload();
+  await page.getByRole('navigation').getByRole('button', { name: '시즌', exact: true }).click();
+  await expect(page.getByRole('button', { name: '다음 학년으로 →' })).toBeVisible();
+  await page.getByRole('navigation').getByRole('button', { name: '기록', exact: true }).click();
+  await expect(page.getByRole('table')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+  await page.getByRole('navigation').getByRole('button', { name: '홈', exact: true }).click();
+  await page.screenshot({ path: 'artifacts/redesign-mobile-home.png' });
+  expect(errors).toEqual([]);
+});
+for (const role of ['HITTER', 'PITCHER'] as const) test(`이전 ${role} 수동 중단 저장을 자동 관전으로 복구`, async ({ page }) => {
+  let save = createCareer({ name: '복구 선수', role, teamId: 'lg', hand: 'RIGHT' }, 42);
+  while (save.phase !== 'HIGHLIGHT_READY') save = advanceRound(save, { autoChoices: true });
+  save.phase = 'MINI_GAME';
+  await page.goto('./');
+  await page.evaluate(value => new Promise<void>((resolve, reject) => {
+    const open = indexedDB.open('diamond-road', 1);
+    open.onupgradeneeded = () => open.result.createObjectStore('saves');
+    open.onsuccess = () => { const db = open.result; const tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(value, 'active'); tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); };
+  }), save);
+  await page.reload(); await page.getByRole('button', { name: '시즌 준비하기 →' }).click();
+  await page.getByRole('button', { name: '시즌 전체 자동 진행 →' }).click();
+  await expect(page.getByRole('button', { name: '성장 반영 · 다음 시즌 →' })).toBeVisible({ timeout: 60000 });
+  await expect(page.getByRole('button', { name: '직접 플레이', exact: true })).toHaveCount(0);
+});

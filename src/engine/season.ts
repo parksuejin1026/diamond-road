@@ -113,10 +113,10 @@ function shouldHighlight(save: CareerSave) {
   const match = currentMatch(pending);
   return pending.game.inning >= 6 && (pending.game.bases.some(Boolean) || Math.abs(pending.game.score.home - pending.game.score.away) <= 2) && (save.player.role === 'HITTER' ? match.batterId === save.player.id : match.pitcherId === save.player.id);
 }
-export function advanceRound(original: CareerSave, options: { interactive?: boolean; autoChoices?: boolean } = {}): CareerSave {
+export function advanceRound(original: CareerSave, options: { interactive?: boolean; autoChoices?: boolean; events?: boolean } = {}): CareerSave {
   const rounds = seasonRounds(original);
   if (!['PRESEASON', 'SIMULATING'].includes(original.phase) || original.league.round >= rounds) return original;
-  if (original.pendingEvent) return options.autoChoices ? advanceRound(chooseEvent(original, original.pendingEvent, 0), options) : original;
+  if (original.pendingEvent) return options.events === false ? advanceRound({ ...original, pendingEvent: null }, options) : options.autoChoices ? advanceRound(chooseEvent(original, original.pendingEvent, 0), options) : original;
   const save = structuredClone(original); const rng = new Rng(save.rngState); save.phase = 'SIMULATING';
   const players = Object.fromEntries(save.players.map(p => [p.id, p]));
   const round = save.league.round + 1;
@@ -135,7 +135,7 @@ export function advanceRound(original: CareerSave, options: { interactive?: bool
   }
   save.league.round = round;
   updateCondition(save, rng);
-  if (round < rounds) maybeEvent(save, rng);
+  if (round < rounds && options.events !== false) maybeEvent(save, rng);
   save.rngState = rng.state;
   if (round === rounds && isYouth(save)) {
     finishSchoolYear(save, rng, simulateSchoolCups(save, rng));
