@@ -11,6 +11,7 @@ import { legacyGrade } from '../engine/awards';
 import StatsDetails from './StatsDetails';
 import SeasonNarrative from './SeasonNarrative';
 import DevelopmentReport from './DevelopmentReport';
+import AsianGamesPanel from './AsianGamesPanel';
 export default function SeasonPanel({ save, view = 'season', busy, onChange, onBusy, onError }: { save: CareerSave; view?: 'season' | 'records'; busy: boolean; onChange: (save: CareerSave) => void; onBusy: (busy: boolean) => void; onError: (error: string) => void }) {
   const rounds = seasonRounds(save); const youth = isYouth(save);
   const needsTraining = save.phase === 'PRESEASON' && !save.trained;
@@ -59,6 +60,7 @@ export default function SeasonPanel({ save, view = 'season', busy, onChange, onB
   if (save.phase === 'DRAFT') return <section className="season"><YouthPanel save={save} busy={busy} update={update} /></section>;
   return <section className="season"><div hidden={view !== 'season'}>
     <DevelopmentReport save={save} />
+    <AsianGamesPanel save={save} />
     <YouthPanel save={save} busy={busy} update={update} />
     <h3>{save.phase === 'RETIRED' ? '커리어 기록' : save.phase === 'SEASON_RESULT' ? youth ? '고교 시즌 결산' : '정규 시즌 결산' : youth ? '고교 주말리그' : '정규 시즌'}</h3>
     <p>{save.year}년 · {save.league.round} / {rounds} 라운드 · {save.league.results.length} / {save.schedule.length} 경기</p>
@@ -73,6 +75,7 @@ export default function SeasonPanel({ save, view = 'season', busy, onChange, onB
     {save.phase === 'RETIRED' && <div className="notice"><p className="eyebrow">HALL OF FAME</p><h2>{legacyGrade(save.seasons).grade}</h2><p>{save.seasons.length}시즌 · 커리어 점수 {legacyGrade(save.seasons).score.toLocaleString()}</p><p>{save.seasons.filter(s => s.championship).length}회 우승 · {save.seasons.reduce((n, s) => n + (s.awards?.length ?? 0), 0)}회 개인상</p></div>}
     {save.phase === 'RETIRED' && bestSeason && <div className="notice"><strong>최고의 시즌 · {bestSeason.year}</strong><p>{bestSeason.hitter ? `${bestSeason.hitter.h}안타 · ${bestSeason.hitter.hr}홈런 · ${bestSeason.hitter.rbi}타점` : `${bestSeason.pitcher?.wins}승 · ${bestSeason.pitcher?.so}탈삼진`}</p><p>{save.seasons.flatMap(s => (s.awards ?? []).map(a => `${s.year} ${a}`)).join(' · ') || '매 시즌 쌓아 올린 기록이 당신의 유산입니다.'}</p></div>}
     </div><div hidden={view !== 'records'}>
+    <AsianGamesPanel save={save} history />
     {save.seasons.length > 0 && <StatsDetails title="전체 통산 기록 (완료 시즌)" hitter={save.player.role === 'HITTER' ? totalH : null} pitcher={save.player.role === 'PITCHER' ? totalP : null} />}
     {save.postseason && <details open><summary>포스트시즌 우승 · {teamName(save.postseason.champion)}</summary>{save.postseason.games.map(g => <p key={g.id}>{teamName(g.awayTeamId)} {g.away} : {g.home} {teamName(g.homeTeamId)}</p>)}</details>}
     {save.awards.length > 0 && <details><summary>리그 개인상</summary>{save.awards.map(a => <p key={a.title}>{a.title} · {save.players.find(p => p.id === a.playerId)?.name}{a.playerId === save.player.id ? ' ★' : ''}</p>)}</details>}

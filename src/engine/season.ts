@@ -12,6 +12,7 @@ import { isYouth, finishSchoolYear, nextSchoolYear, seasonRounds, type SchoolCup
 import { createRoster } from './roster';
 import { developPlayer } from './development';
 import { FIELD_POSITIONS, pitchingAssignment, applyFielding } from './positions';
+import { simulateAsianGames } from './asianGames';
 export interface Standing { teamId: string; w: number; l: number; t: number; }
 export interface GameResult { id: string; round: number; homeTeamId: string; awayTeamId: string; home: number; away: number; innings: number; stage?: string; }
 export interface LeagueSeason { round: number; standings: Standing[]; hitters: Record<string, HitterStats>; pitchers: Record<string, PitcherStats>; results: GameResult[]; }
@@ -28,7 +29,7 @@ export function standings(league: LeagueSeason): Standing[] {
   const rate = (t: Standing) => t.w + t.l ? t.w / (t.w + t.l) : 0;
   return [...league.standings].sort((a, b) => rate(b) - rate(a) || b.w - a.w || a.teamId.localeCompare(b.teamId));
 }
-function startGame(fixture: ScheduleGame, save: CareerSave): PendingGame {
+function startGame(fixture: ScheduleGame, save: CareerSave, rotationRounds?: Record<string, number>): PendingGame {
   if (save.player.role === 'PITCHER') save.player.pitchingRole = pitchingAssignment(save);
   const clubs = [fixture.awayTeamId, fixture.homeTeamId].map(id => {
     const roster = save.players.filter(p => p.teamId === id);
@@ -51,7 +52,7 @@ function startGame(fixture: ScheduleGame, save: CareerSave): PendingGame {
         if (absent) pitchers[target] = pitchers[0];
       }
     }
-    const starter = pitchers[(fixture.round - 1) % (isYouth(save) ? 3 : 5)];
+    const starter = pitchers[((rotationRounds?.[id] ?? fixture.round) - 1) % (isYouth(save) ? 3 : 5)];
     save.league.pitchers[starter].g++; save.league.pitchers[starter].gs++;
     return { lineup: hitters.slice(0, 9), bench: hitters[9] ?? null, pitchers, active: starter, starter, relief: 0, pitches: 0, index: 0, appeared: [starter] };
   });
@@ -61,6 +62,20 @@ function sampleGamePA(save: CareerSave, players: Record<string, Player>, rng: Rn
   const match = currentMatch(save.pendingGame!);
   const result = sampleAutoPA(players[match.batterId].skills, players[match.pitcherId].skills, rng);
   return applyFielding(result, match.defense.lineup.map(id => players[id]), rng);
+}
+export function simulateInternationalFixture(save: CareerSave, fixture: ScheduleGame, rng: Rng): GameResult {
+  const players = Object.fromEntries(save.players.map(player => [player.id, player]));
+  const rotation = Object.fromEntries([fixture.homeTeamId, fixture.awayTeamId].map(id => [id, save.league.results.filter(game => game.homeTeamId === id || game.awayTeamId === id).length + 1]));
+  save.pendingGame = startGame(fixture, save, rotation);
+  while (true) {
+    if (save.pendingGame.pa > 5000) throw new Error('국제대회 경기 진행 상한을 초과했습니다. 마지막 저장에서 다시 시도해 주세요.');
+    prepare(save); commitPA(save, sampleGamePA(save, players, rng), rng);
+    if (save.pendingGame.game.status !== 'FINAL') continue;
+    if (save.pendingGame.game.score.home !== save.pendingGame.game.score.away) break;
+    // International fixtures need a winner. Continue playing real plate appearances beyond 12.
+    save.pendingGame.game = { ...save.pendingGame.game, status: 'RUNNING', inning: 13, half: 'TOP', outs: 0, bases: [null, null, null] };
+  }
+  finishGame(save); return save.league.results.at(-1)!;
 }
 export function currentMatch(pending: PendingGame) {
   const side = pending.game.half === 'TOP' ? 0 : 1;
@@ -152,6 +167,7 @@ export function advanceRound(original: CareerSave, options: { interactive?: bool
   } else if (round === rounds) {
     save.awards = calculateAwards(save.league, save.players);
     save.postseason = simulatePostseason(save, rng);
+    simulateAsianGames(save);
     developPlayer(save, rng);
     finishContractYear(save);
     if ((save.player.contractYearsLeft ?? 1) <= 1 && save.player.age < 38) save.contractOffers = createOffers(save, rng);

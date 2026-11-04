@@ -5,9 +5,18 @@ import { advanceRound } from '../engine/season';
 import { emptyLeague, nextSeason } from '../engine/season';
 import { createOffers } from '../engine/contracts';
 import { Rng } from '../engine/rng';
+import { simulateAsianGames } from '../engine/asianGames';
 import { saveCareer, loadCareer, deleteCareer, getRecoveryNotice } from '../persistence/career';
 afterEach(async () => { await deleteCareer(); });
 const create = () => createCareer({ name: '저장 테스트', role: 'PITCHER', teamId: 'lg', hand: 'RIGHT' }, 77);
+it('국제대회 결과를 복원하고 손상된 중복 대회는 직전 저장으로 되돌린다', async () => {
+  const save = create(); save.year = 2030; save.player.age = 22;
+  for (const key of Object.keys(save.player.skills)) save.player.skills[key] = 99;
+  simulateAsianGames(save); await saveCareer(save);
+  expect(await loadCareer()).toEqual(save);
+  const corrupt = structuredClone(save); corrupt.asianGames!.push(corrupt.asianGames![0]);
+  await saveCareer(corrupt); expect(await loadCareer()).toEqual(save);
+});
 it('계약 등록 기간과 협상 상태를 보존하고 손상 시 복구한다', async () => {
   const valid = create(); valid.phase = 'SEASON_RESULT';
   valid.contractService = { days: 145, faUses: 0, lastFADays: 0, activeRounds: 144, countedYear: 2026 };

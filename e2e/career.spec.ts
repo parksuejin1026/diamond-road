@@ -3,6 +3,7 @@ import { createCareer, type CareerSave } from '../src/engine/career';
 import { advanceRound } from '../src/engine/season';
 import { chooseEvent } from '../src/engine/events';
 import { SCHOOLS } from '../src/engine/schools';
+import { simulateAsianGames } from '../src/engine/asianGames';
 function highlight(role: 'HITTER' | 'PITCHER') {
   let save = createCareer({ name: '브라우저 신인', role, teamId: 'lg', hand: 'RIGHT' }, 42);
   while (save.phase !== 'HIGHLIGHT_READY') save = save.pendingEvent ? chooseEvent(save, save.pendingEvent, 0) : advanceRound(save);
@@ -45,6 +46,8 @@ test('FA 전 연봉 협상과 자동 잔류 재계약을 저장한다', async ({
   let save = createCareer({ name: '잔류 선수', role: 'HITTER', teamId: 'lg', hand: 'RIGHT' }, 9);
   while (save.phase !== 'SEASON_RESULT') save = advanceRound(save, { interactive: false, events: false });
   await installSave(page, save);
+  await expect(page.getByRole('region', { name: '아시안게임 결과' })).toBeVisible();
+  expect((await readSave(page)).asianGames).toHaveLength(1);
   await expect(page.getByRole('heading', { name: '소속 구단과 연봉 재계약' })).toBeVisible();
   await expect(page.locator('.offer')).toHaveCount(1);
   await page.getByRole('button', { name: /재계약 연봉 협상/ }).click();
@@ -59,6 +62,24 @@ test('FA 전 연봉 협상과 자동 잔류 재계약을 저장한다', async ({
   expect(next.contractHistory.at(-1)?.kind).toBe('RENEWAL');
   await page.reload(); await expect(page.getByRole('button', { name: '시즌 준비하기 →' })).toBeVisible();
   expect((await readSave(page)).player.salaryCR).toBe(negotiated);
+});
+for (const role of ['HITTER', 'PITCHER'] as const) test(`${role} 대표팀 대회 결과와 별도 기록을 복원한다`, async ({ page }) => {
+  const save = createCareer({ name: '국가대표', role, teamId: 'lg', hand: 'RIGHT' }, 12);
+  save.year = 2030; save.phase = 'SEASON_RESULT'; save.player.age = 22; save.player.rosterStatus = 'STARTER';
+  for (const key of Object.keys(save.player.skills)) save.player.skills[key] = 99;
+  const report = simulateAsianGames(save)!; expect(report.selected).toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installSave(page, save);
+  await expect(page.getByRole('region', { name: '아시안게임 결과' })).toBeVisible();
+  await page.getByText('나의 대표팀 성적 · KBO 기록과 별도', { exact: true }).click();
+  await page.screenshot({ path: `artifacts/asian-games-${role}.png` });
+  await page.getByRole('navigation').getByRole('button', { name: '기록', exact: true }).click();
+  await page.getByText('국가대표 · 아시안게임 기록 (1회 선발)', { exact: true }).click();
+  await page.reload();
+  const restored = await readSave(page);
+  expect(restored.asianGames).toEqual(save.asianGames);
+  expect(restored.player.reputation).toBe(save.player.reputation);
+  expect(restored.league).toEqual(save.league);
 });
 test('35세 조기 은퇴를 선택하면 명예의 전당에 기록을 보존한다', async ({ page }) => {
   let save = createCareer({ name: '은퇴 선수', role: 'PITCHER', teamId: 'lg', hand: 'RIGHT' }, 4);
