@@ -13,6 +13,7 @@ import SeasonNarrative from './SeasonNarrative';
 import DevelopmentReport from './DevelopmentReport';
 export default function SeasonPanel({ save, view = 'season', busy, onChange, onBusy, onError }: { save: CareerSave; view?: 'season' | 'records'; busy: boolean; onChange: (save: CareerSave) => void; onBusy: (busy: boolean) => void; onError: (error: string) => void }) {
   const rounds = seasonRounds(save); const youth = isYouth(save);
+  const needsTraining = save.phase === 'PRESEASON' && !save.trained;
   const groupIds = new Set(save.schedule.filter(g => g.homeTeamId === save.player.teamId || g.awayTeamId === save.player.teamId).flatMap(g => [g.homeTeamId, g.awayTeamId]));
   const running = useRef(false);
   const stop = useRef(false);
@@ -26,6 +27,7 @@ export default function SeasonPanel({ save, view = 'season', busy, onChange, onB
   }
   async function run(until: number) {
     if (running.current || busy) return;
+    if (needsTraining) { onError('시즌 전 훈련에서 능력치를 하나 선택해 주세요.'); return; }
     running.current = true; stop.current = false; onBusy(true); onError('');
     let current = save;
     try {
@@ -64,7 +66,7 @@ export default function SeasonPanel({ save, view = 'season', busy, onChange, onB
     <div className="statline">{h && hr ? <><strong>AVG {hr.avg.toFixed(3)}</strong><span>{h.g}경기 · {h.pa}타석 · {h.h}안타 · {h.hr}홈런 · {h.rbi}타점</span><span>OBP {hr.obp.toFixed(3)} · SLG {hr.slg.toFixed(3)} · OPS {hr.ops.toFixed(3)}</span></> : p && pr ? <><strong>ERA {pr.era?.toFixed(2) ?? '—'}</strong><span>{p.g}경기 · {p.gs}선발 · {Math.floor(p.outs / 3)}.{p.outs % 3}이닝 · {p.wins}승 {p.losses}패</span><span>{p.so}탈삼진 · {p.er}자책점 · WHIP {pr.whip?.toFixed(2) ?? '—'}</span></> : null}</div>
     <StatsDetails hitter={h} pitcher={p} />
     <SeasonNarrative save={save} />
-    {['PRESEASON', 'SIMULATING', 'HIGHLIGHT_READY', 'MINI_GAME'].includes(save.phase) && <div className="actions"><button className="primary" disabled={busy} onClick={() => run(rounds)}>{progress !== null ? `시즌 진행 중 · ${progress} / ${rounds}` : '시즌 전체 자동 진행 →'}</button>{progress !== null && <button onClick={() => { stop.current = true; }}>저장 후 일시정지</button>}</div>}
+    {['PRESEASON', 'SIMULATING', 'HIGHLIGHT_READY', 'MINI_GAME'].includes(save.phase) && <>{needsTraining && <p id="trainingRequired" role="status">시즌 전 훈련에서 능력치를 하나 선택하면 시즌을 시작할 수 있습니다.</p>}<div className="actions"><button className="primary" disabled={busy || needsTraining} aria-describedby={needsTraining ? 'trainingRequired' : undefined} onClick={() => run(rounds)}>{progress !== null ? `시즌 진행 중 · ${progress} / ${rounds}` : '시즌 전체 자동 진행 →'}</button>{progress !== null && <button onClick={() => { stop.current = true; }}>저장 후 일시정지</button>}</div></>}
     {save.phase === 'SEASON_RESULT' && !youth && <ContractPanel save={save} busy={busy} update={update} />}
     {save.phase === 'SEASON_RESULT' && <button className="primary" disabled={busy} onClick={proceed}>{save.player.age >= 38 ? '은퇴 기록 보기' : youth ? save.youth!.grade === 3 ? '신인 드래프트 참가 →' : '다음 학년으로 →' : '성장 반영 · 다음 시즌 →'}</button>}
     {save.phase === 'SEASON_RESULT' && save.player.age >= 35 && <button className="danger" disabled={busy} onClick={() => { if (window.confirm('이번 시즌을 마지막으로 은퇴할까요?')) update(retire(save)); }}>이번 시즌을 끝으로 은퇴</button>}

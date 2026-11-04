@@ -9,6 +9,8 @@ test('생성 직후 진행은 커리어 페이지 이동이 끝난 뒤 시작한
   await page.getByRole('textbox', { name: '선수 이름' }).fill('빠른 시작');
   await page.getByRole('button', { name: '나의 커리어 시작하기 →' }).click();
   await page.getByRole('button', { name: '시즌 준비하기 →' }).click();
+  await expect(page.getByRole('button', { name: '시즌 전체 자동 진행 →' })).toBeDisabled();
+  await page.getByRole('button', { name: '컨택 +2', exact: true }).click();
   await page.getByRole('button', { name: '시즌 전체 자동 진행 →' }).click();
   await expect(page.getByRole('button', { name: '다음 학년으로 →' })).toBeVisible({ timeout: 60000 });
 });
