@@ -6,9 +6,19 @@ import { emptyLeague, nextSeason } from '../engine/season';
 import { createOffers } from '../engine/contracts';
 import { Rng } from '../engine/rng';
 import { simulateAsianGames } from '../engine/asianGames';
+import { openTrainingPack, useTrainingItem } from '../engine/items';
 import { saveCareer, loadCareer, deleteCareer, getRecoveryNotice } from '../persistence/career';
 afterEach(async () => { await deleteCareer(); });
 const create = () => createCareer({ name: '저장 테스트', role: 'PITCHER', teamId: 'lg', hand: 'RIGHT' }, 77);
+it('아이템 수령·소모를 복원하고 잘못된 아이템은 직전 저장으로 복구한다',async()=>{
+  const used=useTrainingItem(openTrainingPack(create()),0);await saveCareer(used);expect(await loadCareer()).toEqual(used);
+  const corrupt=structuredClone(used);corrupt.items!.inventory.push('unknown-item');await saveCareer(corrupt);expect(await loadCareer()).toEqual(used);
+});
+it('이전 부상 저장은 기록을 보존하며 정상 출전 가능한 상태로 복구한다',async()=>{
+  const legacy=create();legacy.player.health=1;legacy.player.fatigue=99;legacy.player.rosterStatus='INJURED';legacy.player.injuredUntil=999;
+  await saveCareer(legacy);const restored=(await loadCareer())!;
+  expect(restored.player.health).toBe(100);expect(restored.player.fatigue).toBe(0);expect(restored.player.rosterStatus).not.toBe('INJURED');expect(restored.league).toEqual(legacy.league);
+});
 it('국제대회 결과를 복원하고 손상된 중복 대회는 직전 저장으로 되돌린다', async () => {
   const save = create(); save.year = 2030; save.player.age = 22;
   for (const key of Object.keys(save.player.skills)) save.player.skills[key] = 99;

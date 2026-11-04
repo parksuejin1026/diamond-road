@@ -1,8 +1,11 @@
 import type { CareerSave } from '../engine/career';
 import { emptyLeague, emptyHitter, emptyPitcher } from '../engine/season';
+import { restoreAvailability } from '../engine/availability';
 import { migrateTeamNames } from './migrations';
 import { FIELD_POSITIONS } from '../engine/positions';
 import { ASIAN_COUNTRIES, isAsianGamesYear } from '../engine/asianGames';
+import { TRAINING_ITEMS } from '../engine/items';
+import { awardCareerGoal } from '../engine/achievements';
 async function database(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('diamond-road', 1);
@@ -55,6 +58,15 @@ async function loadCandidate(key: string): Promise<CareerSave | null> {
   if (['HIGHLIGHT_READY', 'MINI_GAME'].includes(value.phase) && !value.pendingGame) throw new Error('중요 상황 저장 데이터가 손상되었습니다.');
   if (!value.league || !Number.isInteger(value.league.round) || value.league.round < 0 || value.league.round > Math.max(...value.schedule.map(g => g.round)) || !Array.isArray(value.league.results) || !Array.isArray(value.seasons) || !value.league.hitters || !value.league.pitchers || !Array.isArray(value.league.standings)) throw new Error('시즌 저장 데이터가 손상되었습니다.');
   const validInt = (n: unknown) => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
+  if (value.items) {
+    const items = value.items;
+    if (!Array.isArray(items.inventory) || items.inventory.some(id => !TRAINING_ITEMS.some(item => item.id === id)) || [items.openedYears, items.usedYears].some(years => !Array.isArray(years) || new Set(years).size !== years.length || years.some(year => !validInt(year) || year > value.year))) throw new Error('아이템 저장 데이터가 손상되었습니다.');
+  }
+  if (value.mvpReward && (!validInt(value.mvpReward.year) || value.mvpReward.year > value.year || typeof value.mvpReward.title !== 'string')) throw new Error('MVP 보상 저장 데이터가 손상되었습니다.');
+  for (const contract of [...value.contractHistory, ...value.contractOffers, ...(value.pendingTrade ? [value.pendingTrade] : [])]) {
+    if (!contract || typeof contract.teamId !== 'string' || !validInt(contract.salaryCR) || !validInt(contract.year) || !validInt(contract.years) || contract.years < 1 || (contract.signingBonusCR !== undefined && !validInt(contract.signingBonusCR)) || (contract.option && (!['HITS','STRIKEOUTS'].includes(contract.option.metric) || !validInt(contract.option.target) || contract.option.target < 1 || !validInt(contract.option.bonusCR)))) throw new Error('계약 저장 데이터가 손상되었습니다.');
+  }
+  if (value.contractSettlements && (!Array.isArray(value.contractSettlements) || new Set(value.contractSettlements.map(s=>s.year)).size !== value.contractSettlements.length || value.contractSettlements.some(s=>![s.year,s.salaryCR,s.signingBonusCR,s.optionBonusCR].every(validInt) || s.year > value.year || typeof s.teamId !== 'string' || typeof s.optionAchieved !== 'boolean'))) throw new Error('계약 정산 저장 데이터가 손상되었습니다.');
   if (value.asianGames !== undefined) {
     if (!Array.isArray(value.asianGames) || new Set(value.asianGames.map(report => report.year)).size !== value.asianGames.length) throw new Error('국제대회 저장 데이터가 손상되었습니다.');
     const countries = new Set<string>(ASIAN_COUNTRIES.map(country => country.id));
@@ -84,6 +96,6 @@ async function loadCandidate(key: string): Promise<CareerSave | null> {
     if (!stats || Object.keys(expected).some(k => !validInt((stats as unknown as Record<string, number>)[k]))) throw new Error('기록 저장 데이터가 손상되었습니다.');
   }
   if (value.pendingGame && (!Array.isArray(value.pendingGame.clubs) || value.pendingGame.clubs.length !== 2 || !value.pendingGame.game || !validInt(value.pendingGame.pa) || value.pendingGame.fixture.round !== value.league.round + 1 || !validInt(value.pendingGame.game.outs) || value.pendingGame.game.outs > 2)) throw new Error('진행 중인 경기 저장이 손상되었습니다.');
-  return value;
+  const restored = restoreAvailability(value); awardCareerGoal(restored); return restored;
 }
 export async function deleteCareer() { await access('readwrite', store => store.clear()); setRecoveryNotice(''); }

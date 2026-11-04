@@ -21,7 +21,8 @@ export function calculateAwards(league: LeagueSeason, players: Player[]): Award[
     const h = league.hitters[id]; const p = league.pitchers[id];
     const team = players.find(player => player.id === id)?.teamId;
     const teamWins = league.standings.find(t => t.teamId === team)?.w ?? 0;
-    return (h ? hitterRates(h).ops * w.hitterOps + h.hr * w.hitterHr + h.rbi * w.hitterRbi : p.outs * w.pitcherOuts + p.so * w.pitcherSo + p.er * w.pitcherEr) + teamWins * w.teamWins;
+    const workload = p && p.gs === 0 && p.outs > 270 ? 270 / p.outs : 1;
+    return (h ? h.h * w.hitterHits + (h.h + h.doubles + h.triples * 2 + h.hr * 3) * w.hitterBases + h.bb * w.hitterWalk + h.rbi * w.hitterRbi + h.runs * w.hitterRuns + h.ab * w.hitterAb + h.so * w.hitterSo : (p.outs * w.pitcherOuts + p.so * w.pitcherSo + p.er * w.pitcherEr + p.wins * w.pitcherWins) * workload) + teamWins * w.teamWins;
   });
   return awards;
 }

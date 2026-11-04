@@ -2,7 +2,9 @@ import type { CareerSave } from './career';
 import { overall, hitterRates, pitcherRates } from '../domain/calculators';
 import { TEAMS } from './schedule';
 import { Rng } from './rng';
-export interface Contract { teamId: string; salaryCR: number; years: number; year: number; opportunity: 'STARTER' | 'BENCH'; kind?: 'DRAFT' | 'RENEWAL' | 'FA'; signingBonusCR?: number; negotiated?: boolean; }
+export interface PerformanceOption { metric: 'HITS' | 'STRIKEOUTS'; target: number; bonusCR: number; }
+export interface Contract { teamId: string; salaryCR: number; years: number; year: number; opportunity: 'STARTER' | 'BENCH'; kind?: 'DRAFT' | 'RENEWAL' | 'FA' | 'EXTENSION' | 'RELEASE' | 'TRADE'; signingBonusCR?: number; negotiated?: boolean; option?: PerformanceOption; }
+export interface ContractSettlement { year: number; teamId: string; salaryCR: number; signingBonusCR: number; optionBonusCR: number; optionAchieved: boolean; }
 export interface ContractService { days: number; faUses: number; lastFADays: number; activeRounds: number; countedYear?: number; }
 export function contractService(save: CareerSave): ContractService {
   return save.contractService ?? { days: save.seasons.filter(s => (s.hitter?.g ?? s.pitcher?.g ?? 0) > 0).length * 145, faUses: 0, lastFADays: 0, activeRounds: save.league.round, countedYear: save.seasons.at(-1)?.year };
@@ -17,7 +19,7 @@ export function recordContractRound(save: CareerSave) {
   const service = { ...contractService(save) };
   // league.round has already advanced; legacy saves estimate only the earlier rounds.
   if (!save.contractService) service.activeRounds = Math.max(0, save.league.round - 1);
-  if (!['MINORS', 'INJURED'].includes(save.player.rosterStatus ?? 'BENCH')) service.activeRounds++;
+  if (save.player.rosterStatus !== 'MINORS') service.activeRounds++;
   save.contractService = service;
 }
 export function finishContractYear(save: CareerSave) {
@@ -34,13 +36,49 @@ export function createOffers(save: CareerSave, rng: Rng): Contract[] {
   const performance = hitter && hitter.pa >= 50 ? Math.max(-.15, Math.min(.25, (hitterRates(hitter).ops - .7) * .35)) : pitcher && pitcher.outs >= 60 ? Math.max(-.2, Math.min(.25, (4.5 - (pitcherRates(pitcher).era ?? 4.5)) * .06)) : -.1;
   const base = Math.max(3000, Math.round((2000 + rating * 70 + (save.player.reputation ?? 0) * 30) * (1 + performance) / 100) * 100);
   if ((save.player.contractYearsLeft ?? 1) > 1) return [];
-  if (!faProgress(save).eligible) return [{ teamId: save.player.teamId, salaryCR: base, years: 1, year: save.year + 1, opportunity: rating >= 60 ? 'STARTER' : 'BENCH', kind: 'RENEWAL', signingBonusCR: 0 }];
+  const option: PerformanceOption = { metric: save.player.role === 'HITTER' ? 'HITS' : 'STRIKEOUTS', target: save.player.role === 'HITTER' ? 120 : 100, bonusCR: Math.round(base * .15 / 100) * 100 };
+  if (!faProgress(save).eligible) {
+    const lowCurrent = hitter ? hitter.pa < 50 : (pitcher?.outs ?? 0) < 90;
+    const last = save.seasons.at(-1); const lowPrevious = last && (last.hitter ? last.hitter.pa < 50 : (last.pitcher?.outs ?? 0) < 90);
+    if (save.player.age >= 23 && rating < 48 && lowCurrent && lowPrevious) {
+      return TEAMS.filter(team => team.id !== save.player.teamId && save.players.some(player => player.teamId === team.id)).slice(0, 2).map(team => ({ teamId: team.id, salaryCR: Math.max(3000, Math.round(base * .75 / 100) * 100), years: 1, year: save.year + 1, opportunity: 'BENCH' as const, kind: 'RELEASE' as const, signingBonusCR: 0 }));
+    }
+    const offers: Contract[] = [{ teamId: save.player.teamId, salaryCR: base, years: 1, year: save.year + 1, opportunity: rating >= 60 ? 'STARTER' : 'BENCH', kind: 'RENEWAL', signingBonusCR: 0, option }];
+    if (rating >= 70 && save.seasons.length >= 2) offers.push({ teamId: save.player.teamId, salaryCR: Math.round(base * .95 / 100) * 100, years: 3, year: save.year + 1, opportunity: 'STARTER', kind: 'EXTENSION', signingBonusCR: Math.round(base * .5), option });
+    return offers;
+  }
   const others = TEAMS.filter(t => t.id !== save.player.teamId && save.players.some(p => p.teamId === t.id));
   if (others.length < 2) return [{ teamId: save.player.teamId, salaryCR: base, years: 1, year: save.year + 1, opportunity: rating >= 60 ? 'STARTER' : 'BENCH', kind: 'RENEWAL', signingBonusCR: 0 }];
   const first = rng.int(0, others.length - 1); const second = (first + rng.int(1, others.length - 1)) % others.length;
-  const offers: Contract[] = [save.player.teamId, others[first].id, others[second].id].map((teamId, i) => ({ teamId, salaryCR: Math.round(base * (i === 1 ? 1.3 : i === 2 ? .85 : 1) / 100) * 100, years: i === 1 ? 3 : i === 2 ? 1 : 2, year: save.year + 1, opportunity: i === 2 || rating >= 60 ? 'STARTER' : 'BENCH', kind: 'FA', signingBonusCR: Math.round(base * (i === 1 ? 2 : 1)) }));
+  const offers: Contract[] = [save.player.teamId, others[first].id, others[second].id].map((teamId, i) => ({ teamId, salaryCR: Math.round(base * (i === 1 ? 1.3 : i === 2 ? .85 : 1) / 100) * 100, years: i === 1 ? 3 : i === 2 ? 1 : 2, year: save.year + 1, opportunity: i === 2 || rating >= 60 ? 'STARTER' : 'BENCH', kind: 'FA', signingBonusCR: Math.round(base * (i === 1 ? 2 : 1)), option }));
   offers.push({ teamId: save.player.teamId, salaryCR: base, years: 1, year: save.year + 1, opportunity: rating >= 60 ? 'STARTER' : 'BENCH', kind: 'RENEWAL', signingBonusCR: 0 });
   return offers;
+}
+export function settleContractYear(save: CareerSave) {
+  if (save.contractSettlements?.some(settlement => settlement.year === save.year)) return;
+  const active = save.contractHistory.filter(contract => contract.year <= save.year && contract.year + contract.years > save.year).at(-1);
+  const option = active?.option;
+  const count = option?.metric === 'HITS' ? save.league.hitters[save.player.id]?.h ?? 0 : save.league.pitchers[save.player.id]?.so ?? 0;
+  const optionAchieved = !!option && count >= option.target;
+  save.contractSettlements = [...(save.contractSettlements ?? []), { year: save.year, teamId: save.player.teamId, salaryCR: save.player.salaryCR, signingBonusCR: active?.year === save.year ? active.signingBonusCR ?? 0 : 0, optionBonusCR: optionAchieved ? option!.bonusCR : 0, optionAchieved }];
+}
+export function proposeTrade(save: CareerSave, rng: Rng) {
+  if ((save.player.contractYearsLeft ?? 1) <= 1 || overall(save.player) < 55) return;
+  const wins = save.league.standings.find(team => team.teamId === save.player.teamId)?.w ?? 0;
+  const struggling = save.league.standings.filter(team => team.w > wins).length >= 6 || save.player.rosterStatus === 'MINORS';
+  if (!struggling || rng.next() >= .35) return;
+  const others = TEAMS.filter(team => team.id !== save.player.teamId && save.players.some(player => player.teamId === team.id));
+  if (!others.length) return;
+  const active = save.contractHistory.filter(contract => contract.year <= save.year).at(-1);
+  save.pendingTrade = { teamId: others[rng.int(0, others.length - 1)].id, year: save.year + 1, salaryCR: save.player.salaryCR, years: Math.max(1, save.player.contractYearsLeft! - 1), opportunity: save.player.rosterStatus === 'STARTER' ? 'STARTER' : 'BENCH', kind: 'TRADE', signingBonusCR: 0, option: active?.option };
+}
+export function resolveTrade(save: CareerSave, accept: boolean): CareerSave {
+  if (save.phase !== 'SEASON_RESULT' || !save.pendingTrade) return save;
+  if (!accept) return { ...save, pendingTrade: null };
+  const offered = { ...save, contractOffers: [save.pendingTrade] };
+  const signed = signContract(offered, 0);
+  if (signed === offered) return save;
+  return { ...signed, pendingTrade: null, player: { ...signed.player, contractYearsLeft: save.player.contractYearsLeft }, players: signed.players.map(player => player.id === save.player.id ? { ...signed.player, contractYearsLeft: save.player.contractYearsLeft } : player) };
 }
 export function negotiateSalary(original: CareerSave, index: number): CareerSave {
   const offer = original.contractOffers[index];

@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { createCareer } from '../src/engine/career';
 import { advanceRound, nextSeason, resolveHighlight, pendingPaId } from '../src/engine/season';
 import { chooseEvent } from '../src/engine/events';
-import { signContract } from '../src/engine/contracts';
+import { signContract, resolveTrade } from '../src/engine/contracts';
 import { SCHOOLS } from '../src/engine/schools';
 import { isYouth, signDraft } from '../src/engine/youth';
 it('100개 커리어의 첫 시즌: 중단·복구·직접 결과·이벤트·720경기·포스트시즌', () => {
@@ -15,7 +15,7 @@ it('100개 커리어의 첫 시즌: 중단·복구·직접 결과·이벤트·72
       else save = advanceRound(save);
     }
     expect(save.league.round).toBe(144); expect(save.league.results).toHaveLength(720);
-    expect(save.highlightCount).toBeLessThanOrEqual(3); expect(save.eventsThisSeason).toBe(2);
+    expect(save.highlightCount).toBeLessThanOrEqual(3); expect(save.eventsThisSeason).toBe(0);
     expect(save.seasons).toHaveLength(1); expect(save.postseason?.champion).toBeTruthy();
     for (const team of save.league.standings) expect(team.w + team.l + team.t).toBe(144);
     const runs = Object.values(save.league.hitters).reduce((n, h) => n + h.runs, 0);
@@ -30,6 +30,7 @@ it.each(['HITTER', 'PITCHER'] as const)('%s 16~38세 고교 3년·프로 20시�
     if (save.phase === 'DRAFT') save = signDraft(save);
     else if (save.phase === 'SEASON_RESULT') {
       if (!isYouth(save)) save = signContract(save, 1);
+      if (save.pendingTrade) save = resolveTrade(save, false);
       save = nextSeason(save);
     } else save = advanceRound(save, { interactive: false, autoChoices: true });
   }

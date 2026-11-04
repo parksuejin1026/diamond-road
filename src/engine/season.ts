@@ -5,19 +5,20 @@ import { createGame, applyPlateAppearanceOutcome } from './game';
 import { sampleAutoPA } from './atBat';
 import { Rng } from './rng';
 import { TEAMS, createSchedule } from './schedule';
-import { maybeEvent, chooseEvent } from './events';
-import { createOffers, recordContractRound, finishContractYear, signContract, contractService } from './contracts';
+import { restoreAvailability } from './availability';
+import { createOffers, recordContractRound, finishContractYear, signContract, contractService, settleContractYear, proposeTrade } from './contracts';
 import { calculateAwards } from './awards';
 import { isYouth, finishSchoolYear, nextSchoolYear, seasonRounds, type SchoolCup } from './youth';
 import { createRoster } from './roster';
 import { developPlayer } from './development';
 import { FIELD_POSITIONS, pitchingAssignment, applyFielding } from './positions';
 import { simulateAsianGames } from './asianGames';
+import { awardCareerGoal } from './achievements';
 export interface Standing { teamId: string; w: number; l: number; t: number; }
 export interface GameResult { id: string; round: number; homeTeamId: string; awayTeamId: string; home: number; away: number; innings: number; stage?: string; }
 export interface LeagueSeason { round: number; standings: Standing[]; hitters: Record<string, HitterStats>; pitchers: Record<string, PitcherStats>; results: GameResult[]; }
 export interface SeasonSnapshot { year: number; age: number; teamId: string; hitter: HitterStats | null; pitcher: PitcherStats | null; rank: number; ovr: number; awards?: string[]; championship?: boolean; }
-export interface ClubRuntime { lineup: string[]; bench: string | null; pitchers: string[]; active: string; starter: string; relief: number; pitches: number; index: number; appeared: string[]; }
+export interface ClubRuntime { lineup: string[]; fielders?: string[]; pinchSlot?: number; pinchAllowed?: boolean; bench: string | null; pitchers: string[]; active: string; starter: string; starterStamina?: number; relief: number; pitches: number; index: number; appeared: string[]; }
 export interface PendingGame { fixture: ScheduleGame; clubs: ClubRuntime[]; game: GameState; pa: number; responsible: Record<string, string>; initialOuts: Record<string, number>; winningPitcher: string; losingPitcher: string; prepared: boolean; }
 export interface HighlightFeedback { result: PAResult; before: { home: number; away: number }; after: { home: number; away: number }; paId: string; }
 export const emptyHitter = (): HitterStats => ({ g: 0, pa: 0, ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0, so: 0, rbi: 0, runs: 0, gidp: 0 });
@@ -36,7 +37,7 @@ function startGame(fixture: ScheduleGame, save: CareerSave, rotationRounds?: Rec
     const hitters = roster.filter(p => p.role === 'HITTER').map(p => p.id);
     const pitchers = roster.filter(p => p.role === 'PITCHER').map(p => p.id);
     if (id === save.player.teamId) {
-      const absent = save.player.rosterStatus === 'MINORS' || (save.player.injuredUntil ?? 0) >= fixture.round;
+      const absent = save.player.rosterStatus === 'MINORS';
       if (save.player.role === 'HITTER') {
         const userSlot = hitters.indexOf(save.player.id);
         if (absent) hitters.splice(userSlot, 1);
@@ -52,16 +53,24 @@ function startGame(fixture: ScheduleGame, save: CareerSave, rotationRounds?: Rec
         if (absent) pitchers[target] = pitchers[0];
       }
     }
-    const starter = pitchers[((rotationRounds?.[id] ?? fixture.round) - 1) % (isYouth(save) ? 3 : 5)];
+    const rotationRound = rotationRounds?.[id] ?? fixture.round;
+    const bullpen = pitchers.slice(5);
+    const offset = (rotationRound - 1) % bullpen.length;
+    for (let i = 0; i < bullpen.length; i++) pitchers[5 + i] = bullpen[(i + offset) % bullpen.length];
+    const starter = pitchers[(rotationRound - 1) % (isYouth(save) ? 3 : 5)];
     save.league.pitchers[starter].g++; save.league.pitchers[starter].gs++;
-    return { lineup: hitters.slice(0, 9), bench: hitters[9] ?? null, pitchers, active: starter, starter, relief: 0, pitches: 0, index: 0, appeared: [starter] };
+    const fielders = hitters.slice(0, 8), designated = hitters[8];
+    const battingRating = (id: string) => { const s = roster.find(player => player.id === id)!.skills; return s.contact * .4 + s.power * .35 + s.eye * .15 + s.speed * .1; };
+    const ordered = hitters.slice(0, 9).sort((a,b) => battingRating(b)-battingRating(a) || a.localeCompare(b));
+    const lineup = [ordered[2], ordered[1], ordered[0], ...ordered.slice(3)];
+    return { lineup, fielders, pinchSlot: lineup.indexOf(designated), pinchAllowed: !!hitters[9] && (hitters[9] === save.player.id || battingRating(hitters[9]) >= battingRating(designated) - 5), bench: hitters[9] ?? null, pitchers, active: starter, starter, starterStamina: roster.find(player => player.id === starter)?.skills.stamina ?? 50, relief: 0, pitches: 0, index: 0, appeared: [starter] };
   });
   return { fixture, clubs, game: createGame(), pa: 0, responsible: {}, initialOuts: Object.fromEntries(Object.entries(save.league.pitchers).map(([id, p]) => [id, p.outs])), winningPitcher: clubs[0].starter, losingPitcher: clubs[1].starter, prepared: false };
 }
 function sampleGamePA(save: CareerSave, players: Record<string, Player>, rng: Rng): PAResult {
   const match = currentMatch(save.pendingGame!);
   const result = sampleAutoPA(players[match.batterId].skills, players[match.pitcherId].skills, rng);
-  return applyFielding(result, match.defense.lineup.map(id => players[id]), rng);
+  return applyFielding(result, (match.defense.fielders ?? match.defense.lineup.slice(0,8)).map(id => players[id]), rng);
 }
 export function simulateInternationalFixture(save: CareerSave, fixture: ScheduleGame, rng: Rng): GameResult {
   const players = Object.fromEntries(save.players.map(player => [player.id, player]));
@@ -86,9 +95,12 @@ export const pendingPaId = (save: CareerSave) => save.pendingGame ? save.year + 
 function prepare(save: CareerSave) {
   const pending = save.pendingGame!; if (pending.prepared) return;
   const { offense, defense } = currentMatch(pending);
-  if (pending.game.inning >= 7 && offense.bench) { offense.lineup[8] = offense.bench; offense.bench = null; }
+  const pinchSlot = offense.pinchSlot ?? 8;
+  if (pending.game.inning >= 7 && offense.bench && offense.pinchAllowed !== false && offense.lineup[pinchSlot] !== save.player.id) { offense.lineup[pinchSlot] = offense.bench; offense.bench = null; }
   const starterActive = defense.active === defense.starter;
-  if ((starterActive && (defense.pitches >= 95 || pending.game.inning > 6)) || (!starterActive && defense.pitches >= 25)) {
+  const stamina = defense.starterStamina ?? 50;
+  const starterLimit = 70 + Math.round(stamina * .6);
+  if ((starterActive && (defense.pitches >= starterLimit || pending.game.inning > (stamina >= 75 ? 8 : 6))) || (!starterActive && defense.pitches >= 25)) {
     if (defense.relief < 3) { defense.active = defense.pitchers[5 + defense.relief++]; defense.pitches = 0; save.league.pitchers[defense.active].g++; }
   }
   const batter = offense.lineup[offense.index];
@@ -141,8 +153,8 @@ function shouldHighlight(save: CareerSave) {
 export function advanceRound(original: CareerSave, options: { interactive?: boolean; autoChoices?: boolean; events?: boolean } = {}): CareerSave {
   const rounds = seasonRounds(original);
   if (!['PRESEASON', 'SIMULATING'].includes(original.phase) || original.league.round >= rounds) return original;
-  if (original.pendingEvent) return options.events === false ? advanceRound({ ...original, pendingEvent: null }, options) : options.autoChoices ? advanceRound(chooseEvent(original, original.pendingEvent, 0), options) : original;
-  const save = structuredClone(original); const rng = new Rng(save.rngState); save.phase = 'SIMULATING';
+  if (original.pendingEvent) return advanceRound({ ...original, pendingEvent: null }, options);
+  const save = restoreAvailability(structuredClone(original)); const rng = new Rng(save.rngState); save.phase = 'SIMULATING';
   const players = Object.fromEntries(save.players.map(p => [p.id, p]));
   const round = save.league.round + 1;
   for (const fixture of save.schedule.filter(g => g.round === round)) {
@@ -159,7 +171,6 @@ export function advanceRound(original: CareerSave, options: { interactive?: bool
   save.league.round = round;
   recordContractRound(save);
   updateCondition(save, rng);
-  if (round < rounds && options.events !== false) maybeEvent(save, rng);
   save.rngState = rng.state;
   if (round === rounds && isYouth(save)) {
     finishSchoolYear(save, rng, simulateSchoolCups(save, rng));
@@ -170,12 +181,19 @@ export function advanceRound(original: CareerSave, options: { interactive?: bool
     simulateAsianGames(save);
     developPlayer(save, rng);
     finishContractYear(save);
+    settleContractYear(save);
+    if (save.player.age < 38) proposeTrade(save, rng);
+    const personalAwards = save.awards.filter(award => award.playerId === save.player.id);
+    const regular = save.player.role === 'HITTER' ? (save.league.hitters[save.player.id]?.pa ?? 0) >= 300 : (save.league.pitchers[save.player.id]?.outs ?? 0) >= 180;
+    const fame = (regular ? 1 : 0) + personalAwards.length * 2 + (personalAwards.some(award => award.title === '시즌 MVP') ? 3 : 0) + (save.postseason.champion === save.player.teamId ? 3 : 0);
+    save.player.reputation = Math.min(100, (save.player.reputation ?? 0) + fame);
     if ((save.player.contractYearsLeft ?? 1) <= 1 && save.player.age < 38) save.contractOffers = createOffers(save, rng);
     save.rngState = rng.state;
     save.phase = save.player.age >= 38 ? 'RETIRED' : 'SEASON_RESULT';
     save.seasons.push({ year: save.year, age: save.player.age, teamId: save.player.teamId, hitter: save.league.hitters[save.player.id] ? { ...save.league.hitters[save.player.id] } : null, pitcher: save.league.pitchers[save.player.id] ? { ...save.league.pitchers[save.player.id] } : null, rank: standings(save.league).findIndex(t => t.teamId === save.player.teamId) + 1, ovr: overall(save.player), awards: save.awards.filter(a => a.playerId === save.player.id).map(a => a.title), championship: save.postseason.champion === save.player.teamId });
   }
-  return options.autoChoices && save.pendingEvent ? chooseEvent(save, save.pendingEvent, 0) : save;
+  awardCareerGoal(save);
+  return save;
 }
 function updateCondition(save: CareerSave, rng: Rng) {
   const player = save.player; const round = save.league.round;
@@ -183,14 +201,8 @@ function updateCondition(save: CareerSave, rng: Rng) {
     save.youth!.trust = Math.min(100, save.youth!.trust + 3);
     if (save.youth!.trust >= 55 && player.rosterStatus === 'BENCH') player.rosterStatus = 'STARTER';
   }
-  if (player.rosterStatus === 'INJURED' && round >= (player.injuredUntil ?? 0)) { player.rosterStatus = player.role === 'HITTER' ? 'BENCH' : 'STARTER'; player.health = Math.min(100, player.health + 15); }
   if (player.rosterStatus === 'MINORS' && overall(player) >= 60) player.rosterStatus = player.role === 'HITTER' ? 'BENCH' : 'STARTER';
   if (player.rosterStatus === 'MINORS') player.minorGames = (player.minorGames ?? 0) + (player.role === 'HITTER' || round % 5 === 0 ? 1 : 0);
-  const played = player.rosterStatus !== 'MINORS' && player.rosterStatus !== 'INJURED' && (player.role === 'HITTER' || round % (isYouth(save) ? 3 : 5) === 0 || (isYouth(save) && player.rosterStatus === 'BENCH'));
-  player.fatigue = Math.max(0, Math.min(100, player.fatigue + (played ? player.role === 'HITTER' ? 3 : 10 : 0) - 2));
-  if (played && rng.next() < .002 * (2 - player.health / 100) * (1 + player.fatigue / 100)) {
-    player.injuredUntil = round + rng.int(5, 20); player.rosterStatus = 'INJURED'; player.health = Math.max(25, player.health - 15);
-  }
   save.players = save.players.map(p => p.id === player.id ? player : p);
 }
 function simulatePostseason(save: CareerSave, rng: Rng) {
@@ -244,6 +256,7 @@ export function nextSeason(save: CareerSave): CareerSave {
   if (save.phase !== 'SEASON_RESULT') return save;
   if (isYouth(save)) return nextSchoolYear(save);
   if (save.player.age >= 38) return { ...save, phase: 'RETIRED' };
+  if (save.pendingTrade) throw new Error('트레이드 제안에 답한 뒤 다음 시즌으로 진행해 주세요.');
   if (save.contractOffers.length) {
     const staying = save.contractOffers.findIndex(offer => offer.teamId === save.player.teamId && offer.kind === 'RENEWAL');
     const fallback = staying >= 0 ? staying : save.contractOffers.findIndex(offer => offer.teamId === save.player.teamId);

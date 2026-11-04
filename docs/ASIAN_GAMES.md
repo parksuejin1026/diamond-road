@@ -2,6 +2,8 @@
 
 브랜치: `feature-asian-games`. 이 기능은 아직 공개 Pages에 배포하지 않았다.
 
+후속 전체 완성 작업에 함께 포함했다. 건강·피로 제거에 따라 선발에서 부상 상태는 더 이상 제외 조건이 아니며 2군 제외는 유지한다. 화면은 시즌의 대회 탭 및 기록의 대표팀 탭에서 확인한다. 배포 상태는 저장소 main의 최근 성공한 실행을 기준으로 한다.
+
 ## 대회 구성
 
 [KBO 2026 아시안게임 안내](https://www.koreabaseball.com/Schedule/International/AsianGames/Main2026.aspx)와 [일본 대표팀 공식 대회 안내](https://www.japan-baseball.jp/jp/team/amateur/2026/asiangames/overview.html)의 참가국·진행 방식을 참고했다. 실제 선수 명단이나 실제 경기 결과를 복제하지 않는다.

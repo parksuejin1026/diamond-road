@@ -20,7 +20,7 @@ function selectionScore(save: CareerSave, player: Player) {
   return overall(player) + Math.max(-5, Math.min(15, performance));
 }
 export function selectNationalRoster(save: CareerSave, rng: Rng): Player[] {
-  const candidates = save.players.filter(player => player.age >= 19 && player.age <= 29 && player.rosterStatus !== 'INJURED' && player.rosterStatus !== 'MINORS');
+  const candidates = save.players.filter(player => player.age >= 19 && player.age <= 29 && player.rosterStatus !== 'MINORS');
   // Fictional amateur reserves fill gaps when the generated professional league has few young players.
   for (const role of ['HITTER', 'PITCHER'] as const) for (let i = 0; i < 12; i++) {
     const player = makePlayer(`ag-kor-reserve-${role}-${i}`, `대표 후보 ${role === 'HITTER' ? '타자' : '투수'} ${i + 1}`, role, 'amateur', rng);
@@ -78,8 +78,9 @@ export function simulateAsianGames(save: CareerSave): AsianGamesReport | null {
   const final = [gold, upper.find(id => id !== gold && upper.indexOf(id) < 2)!, bronze, upper.find(id => id !== bronze && upper.indexOf(id) >= 2)!, ...lower];
   const rank = final.indexOf('kor') + 1;
   const medal = rank === 1 ? 'GOLD' : rank === 2 ? 'SILVER' : rank === 3 ? 'BRONZE' : null;
-  const reputationGain = selected ? 2 + (rank === 1 ? 8 : rank === 2 ? 4 : rank === 3 ? 2 : 0) : 0;
-  const report: AsianGamesReport = { year: save.year, selected, reason: selected ? save.player.age > 25 ? '와일드카드 선발' : '능력·시즌 성적을 통한 선발' : save.player.age < 19 || save.player.age > 29 ? '게임 대표팀 연령 기준 밖' : save.player.rosterStatus === 'INJURED' || save.player.rosterStatus === 'MINORS' ? '부상 또는 2군 상태로 제외' : '동 역할 대표팀 경쟁에서 미선발', rank, medal, roster, games: cup.league.results, hitter: selected && save.player.role === 'HITTER' ? { ...cup.league.hitters[save.player.id] } : null, pitcher: selected && save.player.role === 'PITCHER' ? { ...cup.league.pitchers[save.player.id] } : null, reputationGain };
+  const nominalGain = selected ? 2 + (rank === 1 ? 8 : rank === 2 ? 4 : rank === 3 ? 2 : 0) : 0;
+  const reputationGain = Math.max(0, Math.min(nominalGain, 100 - (save.player.reputation ?? 0)));
+  const report: AsianGamesReport = { year: save.year, selected, reason: selected ? save.player.age > 25 ? '와일드카드 선발' : '능력·시즌 성적을 통한 선발' : save.player.age < 19 || save.player.age > 29 ? '게임 대표팀 연령 기준 밖' : save.player.rosterStatus === 'MINORS' ? '2군 상태로 제외' : '동 역할 대표팀 경쟁에서 미선발', rank, medal, roster, games: cup.league.results, hitter: selected && save.player.role === 'HITTER' ? { ...cup.league.hitters[save.player.id] } : null, pitcher: selected && save.player.role === 'PITCHER' ? { ...cup.league.pitchers[save.player.id] } : null, reputationGain };
   save.asianGames = [...(save.asianGames ?? []), report];
   save.player.reputation = Math.min(100, (save.player.reputation ?? 0) + reputationGain);
   save.players = save.players.map(player => player.id === save.player.id ? save.player : player);

@@ -10,7 +10,7 @@ function highlight(role: 'HITTER' | 'PITCHER') {
   return save;
 }
 async function installSave(page: Page, save: CareerSave) {
-  await page.goto('./'); await expect(page.getByRole('button', { name: '나의 커리어 시작하기 →' })).toBeVisible();
+  await page.goto('./'); await expect(page.getByRole('textbox', { name: '선수 이름' })).toBeVisible();
   await page.evaluate(async value => {
     await new Promise<void>((resolve, reject) => {
       const open = indexedDB.open('diamond-road', 1);
@@ -34,6 +34,7 @@ test('FA 자격 후 이적·다음 시즌을 실제 화면에서 저장한다', 
   while (save.phase !== 'SEASON_RESULT') save = advanceRound(save, { interactive: false, autoChoices: true });
   await installSave(page, save);
   await expect(page.getByRole('region', { name: '시즌 성장 결산' })).toBeVisible();
+  await page.getByRole('button', { name: '진로', exact: true }).click();
   await page.locator('.offer').nth(1).click();
   await expect(page.locator('.offer')).toHaveCount(0);
   await page.getByRole('button', { name: '성장 반영 · 다음 시즌 →' }).click();
@@ -46,8 +47,10 @@ test('FA 전 연봉 협상과 자동 잔류 재계약을 저장한다', async ({
   let save = createCareer({ name: '잔류 선수', role: 'HITTER', teamId: 'lg', hand: 'RIGHT' }, 9);
   while (save.phase !== 'SEASON_RESULT') save = advanceRound(save, { interactive: false, events: false });
   await installSave(page, save);
+  await page.getByRole('button', { name: '대회', exact: true }).click();
   await expect(page.getByRole('region', { name: '아시안게임 결과' })).toBeVisible();
   expect((await readSave(page)).asianGames).toHaveLength(1);
+  await page.getByRole('button', { name: '진로', exact: true }).click();
   await expect(page.getByRole('heading', { name: '소속 구단과 연봉 재계약' })).toBeVisible();
   await expect(page.locator('.offer')).toHaveCount(1);
   await page.getByRole('button', { name: /재계약 연봉 협상/ }).click();
@@ -70,10 +73,12 @@ for (const role of ['HITTER', 'PITCHER'] as const) test(`${role} 대표팀 대�
   const report = simulateAsianGames(save)!; expect(report.selected).toBe(true);
   await page.setViewportSize({ width: 390, height: 844 });
   await installSave(page, save);
+  await page.getByRole('button', { name: '대회', exact: true }).click();
   await expect(page.getByRole('region', { name: '아시안게임 결과' })).toBeVisible();
   await page.getByText('나의 대표팀 성적 · KBO 기록과 별도', { exact: true }).click();
   await page.screenshot({ path: `artifacts/asian-games-${role}.png` });
   await page.getByRole('navigation').getByRole('button', { name: '기록', exact: true }).click();
+  await page.getByRole('button', { name: '대표팀', exact: true }).click();
   await page.getByText('국가대표 · 아시안게임 기록 (1회 선발)', { exact: true }).click();
   await page.reload();
   const restored = await readSave(page);
@@ -92,6 +97,7 @@ test('35세 조기 은퇴를 선택하면 명예의 전당에 기록을 보존�
   await expect(page.getByText('HALL OF FAME', { exact: true })).toBeVisible();
   await expect(page.getByText(/최고의 시즌/)).toBeVisible();
   await page.getByRole('navigation').getByRole('button', { name: '기록', exact: true }).click();
+  await page.getByRole('button', { name: '커리어', exact: true }).click();
   await expect(page.getByText(/완료 시즌 · 통산 기록/)).toBeVisible();
   const retired = await readSave(page);
   expect(retired.phase).toBe('RETIRED'); expect(retired.seasons).toHaveLength(1);
@@ -100,6 +106,8 @@ test('고교 3년과 드래프트를 자동 시즌으로 완주한다', async ({
   test.setTimeout(120000);
   await page.goto('./');
   await page.getByRole('textbox', { name: '선수 이름' }).fill('고교부터');
+  await page.getByRole('button', { name: '다음 단계 →' }).click();
+  await page.getByRole('button', { name: '다음 단계 →' }).click();
   await page.getByRole('button', { name: '나의 커리어 시작하기 →' }).click();
   await page.getByRole('button', { name: '시즌 준비하기 →' }).click();
   for (let grade = 1; grade <= 3; grade++) {

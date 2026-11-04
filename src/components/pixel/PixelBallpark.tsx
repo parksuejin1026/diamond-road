@@ -3,7 +3,7 @@ export default function PixelBallpark({ school = false, className = '', children
   const seats = Array.from({ length: 12 }, (_, row) => Array.from({ length: 68 }, (_, col) => ({ x: 24 + col * 4, y: 47 + row * 3, color: ['#315376', '#203b5a', '#a18d66', '#466783'][(col * 11 + row * 7) % 4] }))).flat();
   const stars = [[23, 12], [79, 22], [111, 8], [207, 16], [263, 8], [289, 24], [171, 6], [45, 31]];
   return <div className={'pixelBallpark ' + className}>
-    <svg viewBox="0 0 320 180" role="img" aria-label={school ? '학교 야구부 운동장 도트 풍경' : '조명 아래 펼쳐진 밤의 야구장 도트 풍경'} shapeRendering="crispEdges">
+    <svg preserveAspectRatio="xMidYMid slice" viewBox="0 0 320 180" role="img" aria-label={school ? '학교 야구부 운동장 도트 풍경' : '조명 아래 펼쳐진 밤의 야구장 도트 풍경'} shapeRendering="crispEdges">
       <rect width="320" height="180" fill="#0b1220" />
       <rect y="25" width="320" height="55" fill="#111c2e" />
       {stars.map(([x, y]) => <rect key={x} x={x} y={y} width="1" height="1" fill="#b6c6d8" />)}

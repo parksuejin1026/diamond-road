@@ -14,6 +14,9 @@ export interface CareerSave { trainingHistory?: { year: number; skill: string }[
 export interface CareerSave { focusSkill?: string; development?: import('./development').DevelopmentReport; }
 export interface CareerSave { contractService?: import('./contracts').ContractService; }
 export interface CareerSave { asianGames?: import('./asianGames').AsianGamesReport[]; }
+export interface CareerSave { items?: import('./items').ItemState; }
+export interface CareerSave { mvpReward?: { year: number; title: string }; }
+export interface CareerSave { pendingTrade?: import('./contracts').Contract | null; contractSettlements?: import('./contracts').ContractSettlement[]; }
 export interface CareerSave { schemaVersion: 1; seed: number; rngState: number; player: Player; players: Player[]; schedule: ScheduleGame[]; phase: 'PRESEASON' | 'SIMULATING' | 'HIGHLIGHT_READY' | 'MINI_GAME' | 'DRAFT' | 'SEASON_RESULT' | 'RETIRED'; trained: boolean; year: number; league: LeagueSeason; seasons: SeasonSnapshot[]; pendingGame: PendingGame | null; highlightCount: number; lastHighlight: HighlightFeedback | null; pendingEvent: string | null; eventHistory: EventRecord[]; eventsThisSeason: number; contractHistory: Contract[]; contractOffers: Contract[]; awards: Award[]; postseason: { champion: string; games: import('./season').GameResult[] } | null; }
 export function createCareer(config: { name: string; role: Role; teamId: string; hand: 'LEFT' | 'RIGHT'; schoolId?: string; style?: number; focus?: string; position?: import('../domain/types').FieldPosition }, seed: number): CareerSave {
   const name = config.name.trim();
