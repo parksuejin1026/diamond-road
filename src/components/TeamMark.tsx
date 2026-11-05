@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { TEAMS } from '../engine/schedule';
+import { teamIdentity } from '../engine/institutions';
 export default function TeamMark({id,size=32}:{id:string;size?:number}){
-  const [failed,setFailed]=useState(false),team=TEAMS.find(t=>t.id===id);
+  const [failedId,setFailedId]=useState<string|null>(null),team=teamIdentity(id);
   if(!team)return null;
-  return <span className="teamMark" style={{width:size,height:size,backgroundColor:failed?team.color:undefined}}>{failed?<b>{team.id.slice(0,2).toUpperCase()}</b>:<img src={`${process.env.NEXT_PUBLIC_BASE_PATH??''}/teams/${id}.png`} width={size} height={size} alt={`${team.name} 마크`} onError={()=>setFailed(true)}/>}</span>;
+  const fallback=!team.file||failedId===id;
+  return <span className={`teamMark${fallback?' nameBadge':''}`} title={`${team.name} ${fallback?'이름 배지':'등록 마크'}`} style={{width:size,height:size,backgroundColor:fallback?team.color:undefined}}>{fallback?<b role="img" aria-label={`${team.name} 이름 배지`}>{[...team.name].slice(0,2).join('')}</b>:<img src={`${process.env.NEXT_PUBLIC_BASE_PATH??''}/${team.file}`} width={size} height={size} alt={`${team.name} 마크`} loading="lazy" decoding="async" onError={()=>setFailedId(id)}/>}</span>;
 }

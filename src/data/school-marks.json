@@ -1,0 +1,594 @@
+{
+  "school-1702": {
+    "file": "school-1702.jpg",
+    "name": "GD챌린저스BC(U-18)"
+  },
+  "school-193": {
+    "file": "school-193.jpg",
+    "name": "강릉고"
+  },
+  "school-575": {
+    "file": "school-575.jpg",
+    "name": "강원고"
+  },
+  "school-186": {
+    "file": "school-186.png",
+    "name": "개성고"
+  },
+  "school-1543": {
+    "file": "school-1543.jpg",
+    "name": "거제BC(U-18)"
+  },
+  "school-147": {
+    "file": "school-147.jpg",
+    "name": "경기고"
+  },
+  "school-1065": {
+    "file": "school-1065.jpg",
+    "name": "경기상업고"
+  },
+  "school-916": {
+    "file": "school-916.png",
+    "name": "경기항공고"
+  },
+  "school-176": {
+    "file": "school-176.jpg",
+    "name": "경남고"
+  },
+  "school-153": {
+    "file": "school-153.jpg",
+    "name": "경동고"
+  },
+  "school-1453": {
+    "file": "school-1453.jpg",
+    "name": "경민IT고"
+  },
+  "school-185": {
+    "file": "school-185.gif",
+    "name": "경북고"
+  },
+  "school-144": {
+    "file": "school-144.jpg",
+    "name": "경주고"
+  },
+  "school-141": {
+    "file": "school-141.jpg",
+    "name": "공주고"
+  },
+  "school-1700": {
+    "file": "school-1700.png",
+    "name": "광남고BC"
+  },
+  "school-151": {
+    "file": "school-151.jpg",
+    "name": "광주동성고"
+  },
+  "school-148": {
+    "file": "school-148.png",
+    "name": "광주제일고"
+  },
+  "school-156": {
+    "file": "school-156.jpg",
+    "name": "광주진흥고"
+  },
+  "school-1552": {
+    "file": "school-1552.png",
+    "name": "군산상일고"
+  },
+  "school-1699": {
+    "file": "school-1699.png",
+    "name": "금남고"
+  },
+  "school-1903": {
+    "file": "school-1903.png",
+    "name": "김포과학기술고"
+  },
+  "school-150": {
+    "file": "school-150.jpg",
+    "name": "김해고"
+  },
+  "school-180": {
+    "file": "school-180.png",
+    "name": "대구고"
+  },
+  "school-1667": {
+    "file": "school-1667.png",
+    "name": "대구북구SC(U-18)"
+  },
+  "school-145": {
+    "file": "school-145.jpg",
+    "name": "대구상원고"
+  },
+  "school-171": {
+    "file": "school-171.jpg",
+    "name": "대전고"
+  },
+  "school-821": {
+    "file": "school-821.png",
+    "name": "대전제일고"
+  },
+  "school-157": {
+    "file": "school-157.jpg",
+    "name": "덕수고"
+  },
+  "school-816": {
+    "file": "school-816.jpg",
+    "name": "도개고"
+  },
+  "school-161": {
+    "file": "school-161.jpg",
+    "name": "동산고"
+  },
+  "school-592": {
+    "file": "school-592.png",
+    "name": "라온고"
+  },
+  "school-152": {
+    "file": "school-152.jpg",
+    "name": "마산고"
+  },
+  "school-155": {
+    "file": "school-155.jpg",
+    "name": "마산용마고"
+  },
+  "school-591": {
+    "file": "school-591.jpg",
+    "name": "물금고"
+  },
+  "school-1449": {
+    "file": "school-1449.jpg",
+    "name": "밀양BC(U-18)"
+  },
+  "school-160": {
+    "file": "school-160.jpg",
+    "name": "배명고"
+  },
+  "school-164": {
+    "file": "school-164.jpg",
+    "name": "배재고"
+  },
+  "school-593": {
+    "file": "school-593.jpg",
+    "name": "백송고"
+  },
+  "school-182": {
+    "file": "school-182.png",
+    "name": "부경고"
+  },
+  "school-191": {
+    "file": "school-191.jpg",
+    "name": "부산고"
+  },
+  "school-188": {
+    "file": "school-188.jpg",
+    "name": "부산공업고"
+  },
+  "school-142": {
+    "file": "school-142.jpg",
+    "name": "북일고"
+  },
+  "school-927": {
+    "file": "school-927.png",
+    "name": "비봉고"
+  },
+  "school-1701": {
+    "file": "school-1701.jpg",
+    "name": "상동고"
+  },
+  "school-1761": {
+    "file": "school-1761.png",
+    "name": "서울HG야구단(U-18)"
+  },
+  "school-1759": {
+    "file": "school-1759.jpg",
+    "name": "서울HK야구단(U-18)"
+  },
+  "school-167": {
+    "file": "school-167.png",
+    "name": "서울고"
+  },
+  "school-1158": {
+    "file": "school-1158.png",
+    "name": "서울동산고"
+  },
+  "school-555": {
+    "file": "school-555.jpg",
+    "name": "서울디자인고"
+  },
+  "school-1826": {
+    "file": "school-1826.png",
+    "name": "서울아이티고BC"
+  },
+  "school-1451": {
+    "file": "school-1451.jpg",
+    "name": "서울자동차고"
+  },
+  "school-1164": {
+    "file": "school-1164.jpg",
+    "name": "서울컨벤션고"
+  },
+  "school-170": {
+    "file": "school-170.jpg",
+    "name": "선린인터넷고"
+  },
+  "school-194": {
+    "file": "school-194.png",
+    "name": "설악고"
+  },
+  "school-172": {
+    "file": "school-172.jpg",
+    "name": "성남고"
+  },
+  "school-138": {
+    "file": "school-138.jpg",
+    "name": "세광고"
+  },
+  "school-1827": {
+    "file": "school-1827.png",
+    "name": "세명컴퓨터고야구단"
+  },
+  "school-1696": {
+    "file": "school-1696.gif",
+    "name": "세원고"
+  },
+  "school-519": {
+    "file": "school-519.jpg",
+    "name": "소래고"
+  },
+  "school-295": {
+    "file": "school-295.jpg",
+    "name": "순천효천고BC"
+  },
+  "school-175": {
+    "file": "school-175.png",
+    "name": "신일고"
+  },
+  "school-586": {
+    "file": "school-586.jpg",
+    "name": "신흥고"
+  },
+  "school-1542": {
+    "file": "school-1542.jpg",
+    "name": "아산BC(U-18)"
+  },
+  "school-184": {
+    "file": "school-184.jpg",
+    "name": "안산공업고"
+  },
+  "school-1338": {
+    "file": "school-1338.jpg",
+    "name": "야로고BC"
+  },
+  "school-178": {
+    "file": "school-178.jpg",
+    "name": "야탑고"
+  },
+  "school-818": {
+    "file": "school-818.jpg",
+    "name": "예일메디텍고"
+  },
+  "school-917": {
+    "file": "school-917.bmp",
+    "name": "우신고"
+  },
+  "school-1878": {
+    "file": "school-1878.jpg",
+    "name": "울산BC(U-18)"
+  },
+  "school-195": {
+    "file": "school-195.jpg",
+    "name": "원주고"
+  },
+  "school-189": {
+    "file": "school-189.jpg",
+    "name": "유신고"
+  },
+  "school-556": {
+    "file": "school-556.jpg",
+    "name": "율곡고야구단"
+  },
+  "school-1763": {
+    "file": "school-1763.jpg",
+    "name": "의성고"
+  },
+  "school-1683": {
+    "file": "school-1683.jpg",
+    "name": "의왕BC(U-18)"
+  },
+  "school-521": {
+    "file": "school-521.jpg",
+    "name": "인상고"
+  },
+  "school-192": {
+    "file": "school-192.jpg",
+    "name": "인창고"
+  },
+  "school-165": {
+    "file": "school-165.jpg",
+    "name": "인천고"
+  },
+  "school-547": {
+    "file": "school-547.jpg",
+    "name": "장안고"
+  },
+  "school-179": {
+    "file": "school-179.jpg",
+    "name": "장충고"
+  },
+  "school-1828": {
+    "file": "school-1828.jpg",
+    "name": "전북인공지능고"
+  },
+  "school-162": {
+    "file": "school-162.jpg",
+    "name": "전주고"
+  },
+  "school-169": {
+    "file": "school-169.png",
+    "name": "제물포고"
+  },
+  "school-379": {
+    "file": "school-379.jpg",
+    "name": "제주고"
+  },
+  "school-183": {
+    "file": "school-183.png",
+    "name": "중앙고"
+  },
+  "school-775": {
+    "file": "school-775.jpg",
+    "name": "진영고"
+  },
+  "school-1450": {
+    "file": "school-1450.jpg",
+    "name": "창원공고야구단"
+  },
+  "school-1697": {
+    "file": "school-1697.png",
+    "name": "천안CSBC(U-18)"
+  },
+  "school-815": {
+    "file": "school-815.jpg",
+    "name": "청담고"
+  },
+  "school-187": {
+    "file": "school-187.jpg",
+    "name": "청원고"
+  },
+  "school-421": {
+    "file": "school-421.png",
+    "name": "청주고"
+  },
+  "school-181": {
+    "file": "school-181.jpg",
+    "name": "충암고"
+  },
+  "school-407": {
+    "file": "school-407.jpg",
+    "name": "충훈고"
+  },
+  "school-537": {
+    "file": "school-537.jpg",
+    "name": "포항제철고"
+  },
+  "school-1637": {
+    "file": "school-1637.jpg",
+    "name": "한광BC(U-18)"
+  },
+  "school-1694": {
+    "file": "school-1694.png",
+    "name": "한국마사고BC"
+  },
+  "school-1546": {
+    "file": "school-1546.jpg",
+    "name": "화성동탄B(U-18)"
+  },
+  "school-378": {
+    "file": "school-378.jpg",
+    "name": "화순고"
+  },
+  "school-190": {
+    "file": "school-190.jpg",
+    "name": "휘문고"
+  },
+  "university-391": {
+    "file": "university-391.jpg",
+    "name": "강릉영동대"
+  },
+  "university-130": {
+    "file": "university-130.gif",
+    "name": "건국대"
+  },
+  "university-131": {
+    "file": "university-131.jpg",
+    "name": "경남대"
+  },
+  "university-1452": {
+    "file": "university-1452.png",
+    "name": "경민대"
+  },
+  "university-132": {
+    "file": "university-132.jpg",
+    "name": "경성대"
+  },
+  "university-1166": {
+    "file": "university-1166.png",
+    "name": "경일대"
+  },
+  "university-133": {
+    "file": "university-133.png",
+    "name": "경희대"
+  },
+  "university-134": {
+    "file": "university-134.jpg",
+    "name": "계명대"
+  },
+  "university-135": {
+    "file": "university-135.jpg",
+    "name": "고려대"
+  },
+  "university-1347": {
+    "file": "university-1347.png",
+    "name": "구미대"
+  },
+  "university-1833": {
+    "file": "university-1833.png",
+    "name": "김포대"
+  },
+  "university-136": {
+    "file": "university-136.jpg",
+    "name": "단국대"
+  },
+  "university-1545": {
+    "file": "university-1545.jpg",
+    "name": "대덕대"
+  },
+  "university-294": {
+    "file": "university-294.jpg",
+    "name": "동강대"
+  },
+  "university-139": {
+    "file": "university-139.jpg",
+    "name": "동국대"
+  },
+  "university-140": {
+    "file": "university-140.jpg",
+    "name": "동아대"
+  },
+  "university-1341": {
+    "file": "university-1341.jpg",
+    "name": "동원과학기술대"
+  },
+  "university-1454": {
+    "file": "university-1454.jpg",
+    "name": "동원대"
+  },
+  "university-1339": {
+    "file": "university-1339.png",
+    "name": "동의과학대"
+  },
+  "university-143": {
+    "file": "university-143.jpg",
+    "name": "동의대"
+  },
+  "university-1713": {
+    "file": "university-1713.png",
+    "name": "목포과학대"
+  },
+  "university-1340": {
+    "file": "university-1340.png",
+    "name": "부산과학기술대"
+  },
+  "university-1167": {
+    "file": "university-1167.jpg",
+    "name": "사이버한국외대"
+  },
+  "university-149": {
+    "file": "university-149.jpg",
+    "name": "서울대"
+  },
+  "university-376": {
+    "file": "university-376.jpg",
+    "name": "서울문화예술대"
+  },
+  "university-154": {
+    "file": "university-154.jpg",
+    "name": "성균관대"
+  },
+  "university-196": {
+    "file": "university-196.jpg",
+    "name": "송원대"
+  },
+  "university-1165": {
+    "file": "university-1165.png",
+    "name": "수성대"
+  },
+  "university-1344": {
+    "file": "university-1344.jpg",
+    "name": "신성대"
+  },
+  "university-1549": {
+    "file": "university-1549.jpg",
+    "name": "신안산대"
+  },
+  "university-1064": {
+    "file": "university-1064.png",
+    "name": "여주대"
+  },
+  "university-159": {
+    "file": "university-159.gif",
+    "name": "연세대"
+  },
+  "university-296": {
+    "file": "university-296.png",
+    "name": "영남대"
+  },
+  "university-1352": {
+    "file": "university-1352.jpg",
+    "name": "용인예술과학대"
+  },
+  "university-1838": {
+    "file": "university-1838.jpg",
+    "name": "우석대"
+  },
+  "university-163": {
+    "file": "university-163.jpg",
+    "name": "원광대"
+  },
+  "university-926": {
+    "file": "university-926.jpg",
+    "name": "유원대"
+  },
+  "university-166": {
+    "file": "university-166.jpg",
+    "name": "인하대"
+  },
+  "university-1837": {
+    "file": "university-1837.jpg",
+    "name": "장안대"
+  },
+  "university-1839": {
+    "file": "university-1839.jpg",
+    "name": "전주기전대"
+  },
+  "university-444": {
+    "file": "university-444.jpg",
+    "name": "제주관광대"
+  },
+  "university-177": {
+    "file": "university-177.png",
+    "name": "중앙대"
+  },
+  "university-1541": {
+    "file": "university-1541.jpg",
+    "name": "청운대"
+  },
+  "university-1711": {
+    "file": "university-1711.jpg",
+    "name": "충북보건과학대"
+  },
+  "university-1171": {
+    "file": "university-1171.png",
+    "name": "한국골프과학기술대"
+  },
+  "university-1910": {
+    "file": "university-1910.png",
+    "name": "한국관광대"
+  },
+  "university-173": {
+    "file": "university-173.png",
+    "name": "한양대"
+  },
+  "university-61": {
+    "file": "university-61.jpg",
+    "name": "한일장신대"
+  },
+  "university-293": {
+    "file": "university-293.png",
+    "name": "호원대"
+  },
+  "university-514": {
+    "file": "university-514.jpg",
+    "name": "홍익대"
+  }
+}

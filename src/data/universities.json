@@ -1,0 +1,307 @@
+{
+  "source": "https://www.korea-baseball.com/info/team/team_list?kind_cd=41&season=2026",
+  "season": 2026,
+  "checkedAt": "2026-11-05",
+  "teams": [
+    {
+      "id": "university-391",
+      "name": "강릉영동대",
+      "region": "강원",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-130",
+      "name": "건국대",
+      "region": "서울",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-131",
+      "name": "경남대",
+      "region": "경남",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1452",
+      "name": "경민대",
+      "region": "경기",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-132",
+      "name": "경성대",
+      "region": "부산",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1166",
+      "name": "경일대",
+      "region": "경북",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-133",
+      "name": "경희대",
+      "region": "경기",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-134",
+      "name": "계명대",
+      "region": "대구",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-135",
+      "name": "고려대",
+      "region": "서울",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1347",
+      "name": "구미대",
+      "region": "경북",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1833",
+      "name": "김포대",
+      "region": "경기",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-136",
+      "name": "단국대",
+      "region": "충남",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1545",
+      "name": "대덕대",
+      "region": "대전",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-294",
+      "name": "동강대",
+      "region": "광주",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-139",
+      "name": "동국대",
+      "region": "서울",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-140",
+      "name": "동아대",
+      "region": "부산",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1341",
+      "name": "동원과학기술대",
+      "region": "경남",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1454",
+      "name": "동원대",
+      "region": "경기",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1339",
+      "name": "동의과학대",
+      "region": "부산",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-143",
+      "name": "동의대",
+      "region": "부산",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1713",
+      "name": "목포과학대",
+      "region": "전남",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1340",
+      "name": "부산과학기술대",
+      "region": "부산",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1167",
+      "name": "사이버한국외대",
+      "region": "서울",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-149",
+      "name": "서울대",
+      "region": "서울",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-376",
+      "name": "서울문화예술대",
+      "region": "경기",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-154",
+      "name": "성균관대",
+      "region": "경기",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-196",
+      "name": "송원대",
+      "region": "광주",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1165",
+      "name": "수성대",
+      "region": "대구",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1344",
+      "name": "신성대",
+      "region": "충남",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1549",
+      "name": "신안산대",
+      "region": "경기",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1064",
+      "name": "여주대",
+      "region": "경기",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-159",
+      "name": "연세대",
+      "region": "서울",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-296",
+      "name": "영남대",
+      "region": "경북",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1352",
+      "name": "용인예술과학대",
+      "region": "경기",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1838",
+      "name": "우석대",
+      "region": "충북",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-163",
+      "name": "원광대",
+      "region": "전북",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-926",
+      "name": "유원대",
+      "region": "충북",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-166",
+      "name": "인하대",
+      "region": "인천",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1837",
+      "name": "장안대",
+      "region": "경기",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1839",
+      "name": "전주기전대",
+      "region": "전북",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-444",
+      "name": "제주관광대",
+      "region": "제주",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-177",
+      "name": "중앙대",
+      "region": "경기",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1541",
+      "name": "청운대",
+      "region": "충남",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1711",
+      "name": "충북보건과학대",
+      "region": "충북",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1171",
+      "name": "한국골프과학기술대",
+      "region": "강원",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-1910",
+      "name": "한국관광대",
+      "region": "경기",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-173",
+      "name": "한양대",
+      "region": "경기",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-61",
+      "name": "한일장신대",
+      "region": "전북",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-293",
+      "name": "호원대",
+      "region": "전북",
+      "type": "UNIVERSITY"
+    },
+    {
+      "id": "university-514",
+      "name": "홍익대",
+      "region": "세종",
+      "type": "UNIVERSITY"
+    }
+  ]
+}

@@ -50,6 +50,7 @@ Node.js 22 이상에서 npm install 후 npm run dev로 실행합니다. 개발 �
 ## 문서
 
 - [현재 커리어 개편·검증 결과](docs/REWORK_REPORT.md)
+- [고교·U18·대학 야구부 마크](docs/SCHOOL_MARKS.md)
 - [커리어 개편 설계 초안](docs/CAREER_REWORK_PLAN.md)
 - [이전 버전 완료 보고서](docs/COMPLETION_REPORT.md)
 - [전체 UX 계획과 진행 기록](docs/UX_REDESIGN_PLAN.md)
