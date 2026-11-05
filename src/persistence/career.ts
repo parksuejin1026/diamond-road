@@ -7,6 +7,7 @@ import { FIELD_POSITIONS } from '../engine/positions';
 import { ASIAN_COUNTRIES, isAsianGamesYear } from '../engine/asianGames';
 import { TRAINING_ITEMS } from '../engine/items';
 import { awardCareerGoal } from '../engine/achievements';
+import { SHOP_ITEMS } from '../engine/shop';
 async function database(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('diamond-road', 1);
@@ -59,9 +60,13 @@ async function loadCandidate(key: string): Promise<CareerSave | null> {
   if (['HIGHLIGHT_READY', 'MINI_GAME'].includes(value.phase) && !value.pendingGame) throw new Error('중요 상황 저장 데이터가 손상되었습니다.');
   if (!value.league || !Number.isInteger(value.league.round) || value.league.round < 0 || value.league.round > Math.max(...value.schedule.map(g => g.round)) || !Array.isArray(value.league.results) || !Array.isArray(value.seasons) || !value.league.hitters || !value.league.pitchers || !Array.isArray(value.league.standings)) throw new Error('시즌 저장 데이터가 손상되었습니다.');
   const validInt = (n: unknown) => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
+  if(value.shop){
+    const shop=value.shop,ids=new Set(SHOP_ITEMS.filter(i=>!i.role||i.role===value.player.role).map(i=>i.id));
+    if(!validInt(shop.year)||shop.year>value.year||!Array.isArray(shop.stock)||shop.stock.length!==3||new Set(shop.stock).size!==3||shop.stock.some(id=>!ids.has(id))||!Array.isArray(shop.history)||new Set(shop.history.map(h=>h.year)).size!==shop.history.length||shop.history.some(h=>!validInt(h.year)||h.year>value.year||!ids.has(h.id)||!validInt(h.price)||!h.gains||Object.entries(h.gains).some(([k,g])=>!(k in value.player.skills)||!validInt(g)||g>10))||(shop.purchased!==null&&(!shop.stock.includes(shop.purchased)||!shop.history.some(h=>h.year===shop.year&&h.id===shop.purchased))))throw new Error('아이템 상점 저장 데이터가 손상되었습니다.');
+  }
   if(value.life){
     const state=value.life;
-    if(state.version!==1||!validInt(state.cash)||!validInt(state.mentality)||state.mentality>100||!validInt(state.style)||state.style>2||!validInt(state.appearance)||state.appearance>11||!validInt(state.number)||state.number<1||state.number>99||!['BALANCED','FOOD','HOBBY','REST'].includes(state.routine)||!Array.isArray(state.ledger)||!Array.isArray(state.purchases)||!Array.isArray(state.salaryRequests)||!Array.isArray(state.news)||new Set(state.ledger.map(r=>r.id)).size!==state.ledger.length||state.ledger.some(r=>typeof r.id!=='string'||!Number.isSafeInteger(r.amount)||!validInt(r.year)||typeof r.reason!=='string')||state.purchases.some(p=>!validInt(p.year)||!Number.isInteger(p.gain)||p.gain<1||p.gain>3)||!validInt(value.player.health)||value.player.health>100)throw new Error('현금·생활 관리 저장 데이터가 손상되었습니다.');
+    if(state.version!==1||!validInt(state.cash)||!validInt(state.mentality)||state.mentality>100||!validInt(state.style)||state.style>2||!validInt(state.appearance)||state.appearance>11||!validInt(state.number)||state.number<1||state.number>99||(state.routine!==undefined&&!['BALANCED','FOOD','HOBBY','REST'].includes(state.routine))||!Array.isArray(state.ledger)||!Array.isArray(state.purchases)||!Array.isArray(state.salaryRequests)||!Array.isArray(state.news)||new Set(state.ledger.map(r=>r.id)).size!==state.ledger.length||state.ledger.some(r=>typeof r.id!=='string'||!Number.isSafeInteger(r.amount)||!validInt(r.year)||typeof r.reason!=='string')||state.purchases.some(p=>!validInt(p.year)||!Number.isInteger(p.gain)||p.gain<1||p.gain>3)||!validInt(value.player.health)||value.player.health>100)throw new Error('현금·생활 관리 저장 데이터가 손상되었습니다.');
     if(state.growth&&(!validInt(state.growth.year)||!Array.isArray(state.growth.skills)||!Array.isArray(state.growth.gains)||state.growth.skills.length>2||state.growth.skills.length!==state.growth.gains.length||new Set(state.growth.skills).size!==state.growth.skills.length||state.growth.skills.some(k=>!(k in value.player.skills))||state.growth.gains.some(g=>!validInt(g))))throw new Error('자동 성장 저장 데이터가 손상되었습니다.');
   }
   if (value.items) {

@@ -21,7 +21,7 @@ test('320px 생성 3단계는 검색·선택·뒤로가기·키보드 입력을 
   await expect(page.getByRole('button',{name:/장타자의 꿈/})).toHaveAttribute('aria-pressed','true');
   await page.screenshot({path:'artifacts/creation-320.png'});
   await page.getByRole('button',{name:'다음 단계 →'}).click();
-  await page.getByRole('combobox',{name:'외형'}).selectOption('7');
+  await page.getByRole('button',{name:/^외형 4 선택/}).click();
   await page.getByRole('button',{name:'나의 커리어 시작하기 →'}).click();
   await expect(page).toHaveURL(/\/career\/$/);
   await expect(page.getByText(/16세 · 우익수/)).toBeVisible();
@@ -30,20 +30,19 @@ test('320px 생성 3단계는 검색·선택·뒤로가기·키보드 입력을 
   const panel=page.locator('main.inCareer>.panel');
 
   await page.screenshot({path:'artifacts/home-320.png'});
-  expect((await readSave(page)).life?.appearance).toBe(7);
+  expect((await readSave(page)).life?.appearance).toBe(3);
   await page.getByRole('button',{name:'시즌 준비하기 →'}).click();
 
   await page.screenshot({path:'artifacts/preparation-320.png'});
 });
-test('현금 코칭 구매와 생활 루틴이 복원되고 무료 훈련 없이 시즌을 시작한다',async({page})=>{
-  await createFromWizard(page,'관리 선수');await page.getByRole('button',{name:'시즌 준비하기 →'}).click();
-  await page.getByText('생활 관리 · 개인 코칭',{exact:true}).click();
-  await page.getByRole('combobox',{name:'생활 루틴'}).selectOption('FOOD');
-  await page.getByRole('button',{name:'1,000,000원 · +1',exact:true}).click();
-  const bought=await readSave(page);expect(bought.life?.cash).toBe(0);expect(bought.life?.routine).toBe('FOOD');
-  await page.reload();await page.getByRole('button',{name:'시즌 준비하기 →'}).click();
-  expect((await readSave(page)).life).toEqual(bought.life);
-  await expect(page.getByRole('button',{name:'시즌 전체 자동 진행 →'})).toBeEnabled();
+test('무료 지급·회복·직접 코칭 없이 세 상품 중 하나를 사며 새로고침 후 유지한다',async({page})=>{
+ const save=createCareer({name:'상점 선수',role:'HITTER',teamId:'lg',hand:'RIGHT'},31);save.life!.cash=50000000;
+ await installSave(page,save);await expect(page.getByRole('region',{name:'시즌 아이템 상점'}).locator('article')).toHaveCount(3);
+ await expect(page.getByRole('combobox',{name:'생활 루틴'})).toHaveCount(0);await expect(page.getByText('현금 입출금 내역',{exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:/무료 회복/})).toHaveCount(0);
+ await page.getByRole('region',{name:'시즌 아이템 상점'}).getByRole('button',{name:'구매하기',exact:true}).first().click();
+ const bought=await readSave(page);expect(bought.shop?.history).toHaveLength(1);expect(bought.life!.cash).toBeLessThan(50000000);
+ await expect(page.getByRole('button',{name:'구매 완료',exact:true})).toBeDisabled();await page.reload();await page.getByRole('button',{name:'시즌 준비하기 →'}).click();expect((await readSave(page)).shop).toEqual(bought.shop);
+ await expect(page.getByRole('button',{name:'시즌 전체 자동 진행 →'})).toBeEnabled();
 });
 
 test('방출 선수는 새 구단 입단을 선택해야 다음 시즌으로 간다',async({page})=>{

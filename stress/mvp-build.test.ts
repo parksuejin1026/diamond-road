@@ -1,4 +1,4 @@
-import { buyGrowth, recover, manage } from '../src/engine/life';
+import {buyShopItem,shopState,SHOP_ITEMS} from '../src/engine/shop';
 import { expect,it } from 'vitest';
 import { mkdirSync,writeFileSync } from 'node:fs';
 import { createCareer,train } from '../src/engine/career';
@@ -20,19 +20,13 @@ it('현금과 자동 육성의 정상 경로로 MVP 목표에 도전하고 수�
       save=nextSeason(save);
     }else{
       if(save.phase==='PRESEASON'){
-        save=recover(manage(save,'BALANCED'));
-        const preferred=save.player.role==='HITTER'?['power','contact','eye','speed','defense','mental']:['control','velocity','stamina','breaking','mental'];
-        let spent=0;
-        while(spent++<6){
-          const skill=preferred.filter(k=>save.player.skills[k]<99).sort((a,b)=>save.player.skills[a]-save.player.skills[b])[0];
-          if(!skill)break;
-          const next=buyGrowth(save,skill,0);if(next===save)break;save=next;
-        }
+        const offered=shopState(save).stock.map(id=>SHOP_ITEMS.find(i=>i.id===id)!).sort((a,b)=>b.price-a.price);
+        for(const item of offered){const next=buyShopItem(save,item.id);if(next!==save){save=next;break;}}
       }
       save=advanceRound(save,{interactive:false,events:false});
     }
   }
-  const result={seed:3,strategy:'trait growth; balanced routine; annual cash coaching of weakest skill',mvp:mvpCount(save),seasons:save.seasons.map(s=>({year:s.year,ovr:s.ovr,awards:s.awards,hitter:s.hitter})),reward:save.mvpReward,age:save.player.age};
+  const result={seed:3,strategy:'play-style automatic growth; one affordable item from three seasonal offers',mvp:mvpCount(save),seasons:save.seasons.map(s=>({year:s.year,ovr:s.ovr,awards:s.awards,hitter:s.hitter})),reward:save.mvpReward,age:save.player.age};
   mkdirSync('artifacts',{recursive:true});writeFileSync('artifacts/mvp-build.json',JSON.stringify(result,null,2));
   console.log('MVP_BUILD',JSON.stringify({mvp:result.mvp,age:result.age,reward:result.reward}));
   expect(save.phase).toBe('RETIRED');expect(save.seasons).toHaveLength(20);

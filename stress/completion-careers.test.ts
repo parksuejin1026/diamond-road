@@ -1,4 +1,4 @@
-import { buyGrowth, recover, manage } from '../src/engine/life';
+import {buyShopItem,shopState,SHOP_ITEMS} from '../src/engine/shop';
 import { afterAll, expect, it } from 'vitest';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { createCareer, train } from '../src/engine/career';
@@ -24,14 +24,8 @@ it.each(Array.from({length:10},(_,i)=>i+1))('seed %i: 준비·아이템·고교�
       save=nextSeason(save);
     }else{
       if(save.phase==='PRESEASON'){
-        save=recover(manage(save,'BALANCED'));
-        const preferred=save.player.role==='HITTER'?['power','contact','eye','speed','defense','mental']:['control','velocity','stamina','breaking','mental'];
-        let spent=0;
-        while(spent++<6){
-          const skill=preferred.filter(k=>save.player.skills[k]<99).sort((a,b)=>save.player.skills[a]-save.player.skills[b])[0];
-          if(!skill)break;
-          const next=buyGrowth(save,skill,0);if(next===save)break;save=next;
-        }
+        const offered=shopState(save).stock.map(id=>SHOP_ITEMS.find(i=>i.id===id)!).sort((a,b)=>b.price-a.price);
+        for(const item of offered){const next=buyShopItem(save,item.id);if(next!==save){save=next;break;}}
       }
       save=advanceRound(save,{interactive:false,events:false});
     }

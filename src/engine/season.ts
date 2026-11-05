@@ -1,3 +1,4 @@
+import { youthCupAwards } from './youthAwards';
 import { simulateWorld, updateMilitary, military } from './international';
 import { life, prepareLife, effectiveSkills, conditionRound, credit } from './life';
 import { recordMoment } from './moments';
@@ -317,7 +318,7 @@ function simulateSchoolCups(save: CareerSave, rng: Rng): SchoolCup[] {
         let winner: string | null = null;
         while (!winner) {
           if (++count > 500) throw new Error('전국대회 진행에 실패했습니다. 마지막 저장부터 재개해 주세요.');
-          const fixture = { id: name + '-' + count, round: 20 + count, homeTeamId: entrants[i], awayTeamId: entrants[i + 1] };
+          const fixture = { id: name + '-' + count, round: 20 + count, homeTeamId: entrants[i], awayTeamId: entrants[i + 1], stage: name+' '+(entrants.length<=2?'결승':entrants.length<=4?'4강':entrants.length<=8?'8강':entrants.length<=16?'16강':entrants.length<=32?'32강':entrants.length<=64?'64강':'128강') };
           post.pendingGame = startGame(fixture, post);
           while (post.pendingGame.game.status !== 'FINAL') {
             if (post.pendingGame.pa > 5000) throw new Error('전국대회 경기 상한을 초과했습니다.');
@@ -332,7 +333,7 @@ function simulateSchoolCups(save: CareerSave, rng: Rng): SchoolCup[] {
       }
       entrants = winners;
     }
-    cups.push({ name, champion: entrants[0], games: post.league.results, hitter: post.league.hitters[save.player.id] ? { ...post.league.hitters[save.player.id] } : null, pitcher: post.league.pitchers[save.player.id] ? { ...post.league.pitchers[save.player.id] } : null });
+    cups.push({ name, champion: entrants[0], awards: youthCupAwards(post.league,post.players,entrants[0]), games: post.league.results, hitter: post.league.hitters[save.player.id] ? { ...post.league.hitters[save.player.id] } : null, pitcher: post.league.pitchers[save.player.id] ? { ...post.league.pitchers[save.player.id] } : null });
   }
   return cups;
 }

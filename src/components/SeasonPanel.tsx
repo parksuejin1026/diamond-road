@@ -1,4 +1,5 @@
 'use client';
+import YouthSeasonReview, {YouthCareerHistory} from './YouthSeasonReview';
 import InternationalPanel from './InternationalPanel';
 import TeamMark from './TeamMark';
 import { contractMoney } from '../engine/life';
@@ -69,8 +70,8 @@ export default function SeasonPanel({ save, view = 'season', busy, onChange, onB
   })[0];
   if (save.phase === 'DRAFT' && view === 'season') return <section className="season"><YouthPanel save={save} busy={busy} update={update} /></section>;
   return <section className="season"><div hidden={view !== 'season'}><div hidden={save.phase==='PRESEASON'} className="subTabs" role="group" aria-label="시즌 화면">{([['overview','요약'],['competition','대회'],['contract','진로']] as const).map(([key,label])=><button key={key} disabled={busy} aria-pressed={section===key} onClick={()=>setSection(key)}>{label}{key==='contract'&&needsContract?' ●':''}</button>)}</div><div hidden={section!=='overview'}>
-    <DevelopmentReport save={save} />
-    {['SEASON_RESULT','RETIRED'].includes(save.phase) && <section className="notice"><h3>시즌 총평</h3><p>{seasonReview(save)}</p><p>시즌 MVP · {save.awards.some(a=>a.playerId===save.player.id&&a.title==='시즌 MVP')?'수상 🏆':'미수상'}</p><p>골든글러브 · {save.awards.some(a=>a.playerId===save.player.id&&a.title.includes('골든글러브'))?'수상 🏆':youth?'고교 선수 대상 아님':'미수상'}</p></section>}
+    <DevelopmentReport save={save} /><YouthSeasonReview save={save}/>
+    {!youth && ['SEASON_RESULT','RETIRED'].includes(save.phase) && <section className="notice"><h3>시즌 총평</h3><p>{seasonReview(save)}</p><p>시즌 MVP · {save.awards.some(a=>a.playerId===save.player.id&&a.title==='시즌 MVP')?'수상 🏆':'미수상'}</p><p>골든글러브 · {save.awards.some(a=>a.playerId===save.player.id&&a.title.includes('골든글러브'))?'수상 🏆':youth?'고교 선수 대상 아님':'미수상'}</p></section>}
     {save.phase==='POSTSEASON'&&<section className="postseasonEntry"><p className="eyebrow">THE ROAD TO GLORY</p><h2>{standings(save.league).findIndex(t=>t.teamId===save.player.teamId)<5?'가을 야구, 당신의 무대입니다.':'챔피언의 주인을 가릴 시간입니다.'}</h2><PixelBallpark/><p>정규시즌 기록은 확정됐습니다. 포스트시즌 기록과 명장면은 별도로 남습니다.</p><button className="primary" disabled={busy} onClick={()=>update(playPostseason(save))}>포스트시즌 진행 · 명장면 보기 →</button></section>}
     <MomentTheater save={save} />
     {progress !== null && <div className="seasonWatch" role="status"><PixelBallpark school={youth}/><span>자동 관전 · {progress} / {rounds} 라운드</span>{lastGame && <p>{teamName(lastGame.awayTeamId)} {lastGame.away} : {lastGame.home} {teamName(lastGame.homeTeamId)}</p>}</div>}
@@ -89,7 +90,7 @@ export default function SeasonPanel({ save, view = 'season', busy, onChange, onB
     {save.phase === 'RETIRED' && bestSeason && <div className="notice"><strong>최고의 시즌 · {bestSeason.year}</strong><p>{bestSeason.hitter ? `${bestSeason.hitter.h}안타 · ${bestSeason.hitter.hr}홈런 · ${bestSeason.hitter.rbi}타점` : `${bestSeason.pitcher?.wins}승 · ${bestSeason.pitcher?.so}탈삼진`}</p><p>{save.seasons.flatMap(s => (s.awards ?? []).map(a => `${s.year} ${a}`)).join(' · ') || '매 시즌 쌓아 올린 기록이 당신의 유산입니다.'}</p></div>}
     </div><div hidden={view !== 'records'}>
 <div className="subTabs" role="group" aria-label="기록 화면">{([['league','리그'],['career','커리어'],['national','대표팀']] as const).map(([key,label])=><button key={key} aria-pressed={recordSection===key} onClick={()=>setRecordSection(key)}>{label}</button>)}</div><div hidden={recordSection!=='national'}><InternationalPanel save={save} busy={busy} update={update}/><AsianGamesPanel save={save} history /></div>
-    <div hidden={recordSection!=='career'}>{save.seasons.length > 0 && <StatsDetails title="전체 통산 기록 (완료 시즌)" hitter={save.player.role === 'HITTER' ? totalH : null} pitcher={save.player.role === 'PITCHER' ? totalP : null} />}</div>
+    <div hidden={recordSection!=='career'}><YouthCareerHistory save={save}/>{save.seasons.length > 0 && <StatsDetails title="전체 통산 기록 (완료 시즌)" hitter={save.player.role === 'HITTER' ? totalH : null} pitcher={save.player.role === 'PITCHER' ? totalP : null} />}</div>
     <div hidden={recordSection!=='league'}>{save.postseason && <details><summary>포스트시즌 우승 · {teamName(save.postseason.champion)}</summary>{save.postseason.games.map(g => <p key={g.id}>{teamName(g.awayTeamId)} {g.away} : {g.home} {teamName(g.homeTeamId)}</p>)}</details>}
     {save.awards.length > 0 && <details><summary>리그 개인상</summary>{save.awards.map(a => <p key={a.title}>{a.title} · {save.players.find(p => p.id === a.playerId)?.name}{a.playerId === save.player.id ? ' ★' : ''}</p>)}</details>}
     <div className="tableWrap"><table><caption>{youth ? '내 권역 순위' : 'KBO 정규 시즌 순위'}</caption><thead><tr><th>순위</th><th>구단</th><th>승</th><th>패</th><th>무</th><th>승률</th></tr></thead><tbody>{standings(save.league).filter(t => !youth || groupIds.has(t.teamId)).map((t, i) => <tr key={t.teamId} className={t.teamId === save.player.teamId ? 'myTeam' : ''}><td>{i + 1}</td><th scope="row"><TeamMark id={t.teamId}/>{teamName(t.teamId)}</th><td>{t.w}</td><td>{t.l}</td><td>{t.t}</td><td>{t.w + t.l ? (t.w / (t.w + t.l)).toFixed(3) : '.000'}</td></tr>)}</tbody></table></div>

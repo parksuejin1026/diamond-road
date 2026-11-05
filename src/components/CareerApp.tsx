@@ -1,5 +1,7 @@
 'use client';
 import TeamMark from './TeamMark';
+import PixelPlayer from './pixel/PixelPlayer';
+import DraftReveal from './DraftReveal';
 import ArchivePanel from './ArchivePanel';
 import LifePanel from './LifePanel';
 import { retire } from '../engine/season';
@@ -45,12 +47,13 @@ export default function CareerApp() {
     if (!window.confirm('은퇴 기록을 보관하고 새로운 야구 인생을 시작할까요?')) return;
     setBusy(true); try { await deleteCareer(); setSave(null); setTab('home'); } catch { setError('저장 데이터 삭제에 실패했습니다.'); } finally { setBusy(false); }
   }
+  if(ready&&save?.phase==='DRAFT'&&pathname.replace(/\/$/,'')==='/career')return <main className="draftPage">{error&&<p role="alert" className="error">{error}</p>}<DraftReveal save={save} busy={busy} update={persist}/></main>;
   return <main className={save ? `inCareer tab-${tab}` : ''}>
     <header><a href={(process.env.NEXT_PUBLIC_BASE_PATH || '') + '/'} className="brand">D<span>◆</span>R <small>DIAMOND ROAD</small></a><span className="badge">DIAMOND ROAD · CAREER</span></header>
     {error && <p role="alert" className="error">{error}</p>}
     {!ready || (save && pathname.replace(/\/$/, '') !== '/career') ? <section className="panel" role="status">커리어를 불러오는 중…</section> : save ? <section className="panel">
       <div hidden={tab !== 'player'}><div className="panelHead"><div><p className="eyebrow">{save.year} · {isYouth(save) ? `고교 ${save.youth!.grade}학년` : phaseLabels[save.phase]}</p><h2>{save.player.name} <small>{save.player.age}세 / {positionName(save.player)} · {statusLabels[save.player.rosterStatus ?? 'BENCH']}</small></h2><p><TeamMark id={save.player.teamId}/>{teamName(save.player.teamId)}{isYouth(save) ? ' · 16세부터 시작한 나의 야구' : ` · 연봉 ${contractMoney(save.player.salaryCR)}`}</p></div><div className="ovr"><span>OVR</span><strong>{overall(save.player)}</strong></div></div>
-      <div className="skills">{Object.entries(save.player.skills).map(([key, value]) => <div key={key}><span>{labels[key]}</span><strong>{value}</strong><meter min="1" max="99" value={value} aria-label={labels[key]} /></div>)}</div>
+      <div className="playerPortraitPanel"><PixelPlayer role={save.player.role} variant={save.life?.appearance} number={save.life?.number}/></div><div className="skills">{Object.entries(save.player.skills).map(([key, value]) => <div key={key}><span>{labels[key]}</span><strong>{value}</strong><meter min="1" max="99" value={value} aria-label={labels[key]} /></div>)}</div>
       <PositionSettings save={save} busy={busy} onChange={persist} /></div>
       {tab === 'home' && (save.phase === 'RETIRED' ? <LegacySummary save={save} onNewCareer={resetCareer} /> : <CareerHome save={save} onSeason={() => setTab('season')} />)}
       {tab === 'season' && save.phase !== 'RETIRED' && <LifePanel save={save} busy={busy} update={persist} />}

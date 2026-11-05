@@ -6,10 +6,9 @@ import { Rng } from './rng';
 export const skillNames: Record<string,string> = {contact:'컨택',power:'파워',eye:'선구안',speed:'주력',defense:'수비',mental:'정신력',velocity:'구속',control:'제구',breaking:'변화구',stamina:'체력'};
 export const won = (amount:number) => `${Math.round(amount).toLocaleString('ko-KR')}원`;
 export const contractMoney = (amount:number) => won(amount * 10000);
-export const COACHING_PRICES=[1000000,1800000,2500000] as const;
 export interface Life {
   version: 1; cash: number; mentality: number; style: number; appearance: number; number: number;
-  routine: 'BALANCED'|'FOOD'|'HOBBY'|'REST';
+  routine?: 'BALANCED'|'FOOD'|'HOBBY'|'REST'; // Read compatibility only.
   ledger: {id:string;year:number;amount:number;reason:string}[];
   purchases: {year:number;gain:number}[];
   growth?: {year:number;skills:string[];gains:number[]};
@@ -20,9 +19,8 @@ export interface Life {
 export function life(save:CareerSave):Life {
   if (!save.life) {
     const settlements = save.contractSettlements ?? [];
-    save.life = {version:1,cash:settlements.reduce((n,s)=>n+(s.salaryCR+s.signingBonusCR+s.optionBonusCR)*10000,0)+(save.seasons.length===0?1000000:0),mentality:85,style:0,appearance:save.seed%12,number:save.seed%98+1,routine:'BALANCED',ledger:[],purchases:[],salaryRequests:[],news:[]};
+    save.life = {version:1,cash:settlements.reduce((n,s)=>n+(s.salaryCR+s.signingBonusCR+s.optionBonusCR)*10000,0),mentality:85,style:0,appearance:save.seed%6,number:save.seed%98+1,ledger:[],purchases:[],salaryRequests:[],news:[]};
     if (settlements.length) save.life.ledger.push({id:'migration',year:save.year,amount:save.life.cash,reason:'이전 계약 정산 이력 이전'});
-    else if(save.life.cash)save.life.ledger.push({id:'initial-support',year:save.year,amount:save.life.cash,reason:'첫 커리어 육성 지원금'});
   }
   return save.life;
 }
@@ -54,37 +52,17 @@ export function effectiveSkills(player:Player, save:CareerSave) {
   const state=life(save); const mind=Math.max(0,70-state.mentality)/70; const body=Math.max(0,70-player.health)/70;
   return Object.fromEntries(Object.entries(player.skills).map(([key,value])=>[key,Math.max(1,value*(1-Math.min(.15,(key==='eye'||key==='control'||key==='mental'||key==='defense'?.10*mind:.04*mind)+.10*body)))]));
 }
-export function manage(save:CareerSave, routine:Life['routine']):CareerSave {
-  if(save.phase!=='PRESEASON')return save;
-  const next=structuredClone(save);life(next).routine=routine;return next;
-}
-export function buyGrowth(save:CareerSave,skill:string,tier:number):CareerSave {
-  if(save.phase!=='PRESEASON'||!(skill in save.player.skills)||![0,1,2].includes(tier))return save;
-  const next=structuredClone(save), state=life(next), gain=tier+1;
-  const used=state.purchases.filter(p=>p.year===save.year).reduce((n,p)=>n+p.gain,0);
-  const price=COACHING_PRICES[tier]*(save.player.skills[skill]>=80?2:1);
-  if(used+gain>6||state.cash<price||save.player.skills[skill]+gain>99)return save;
-  credit(next,`purchase-${save.year}-${state.purchases.length}`,-price,`${skillNames[skill]} 개인 코칭`);
-  next.player.skills[skill]=Math.min(99,next.player.skills[skill]+gain);state.purchases.push({year:save.year,gain});
-  next.players=next.players.map(p=>p.id===next.player.id?next.player:p);return next;
-}
-export function recover(save:CareerSave):CareerSave {
-  if(save.phase!=='PRESEASON'||life(save).ledger.some(r=>r.id===`care-${save.year}`))return save;
-  const next=structuredClone(save);credit(next,`care-${save.year}`,0,'시즌 전 무료 회복');
-  next.player.health=Math.min(100,next.player.health+15);life(next).mentality=Math.min(100,life(next).mentality+15);return next;
-}
 export function conditionRound(save:CareerSave,rng:Rng){
   const state=life(save),round=save.league.round;
   const period=save.youth&&!save.youth.graduated?2:12;
   if(round%period)return;
-  const routine=state.routine;
-  save.player.health=Math.max(20,Math.min(100,save.player.health+rng.int(-6,1)+(routine==='FOOD'?4:routine==='REST'?3:2)-(save.player.age>=33?1:0)));
+  save.player.health=Math.max(20,Math.min(100,save.player.health+rng.int(-2,2)-(save.player.age>=33?1:0)));
   const h=save.league.hitters[save.player.id],p=save.league.pitchers[save.player.id];
   const slump=h?h.ab>=40&&h.h/h.ab<.22:!!p&&p.outs>=45&&p.er*27/p.outs>5.5;
   const resilient=(save.player.skills.mental??40)>=70;
   const games=save.league.results.filter(g=>g.homeTeamId===save.player.teamId||g.awayTeamId===save.player.teamId).slice(-3);
   const losses=games.filter(g=>g.homeTeamId===save.player.teamId?g.home<g.away:g.away<g.home).length;
-  state.mentality=Math.max(20,Math.min(100,state.mentality+rng.int(-5,3)+(routine==='HOBBY'?4:routine==='REST'?2:1)-(slump&&!resilient?2:0)-(losses===3?1:0)));
+  state.mentality=Math.max(20,Math.min(100,state.mentality+rng.int(-2,3)-(slump&&!resilient?2:0)-(losses===3?1:0)));
 }
 export function answerMeeting(save:CareerSave,kind:'style'|'position',accept:boolean):CareerSave {
   if(save.phase!=='PRESEASON')return save;

@@ -11,7 +11,7 @@ import { SCHOOLS, createSchoolSchedule } from './schools';
 import type { YouthCareer } from './youth';
 import { FIELD_POSITIONS } from './positions';
 export interface CareerSave { military?: import('./international').Military; world?: import('./international').WorldReport[]; serviceRecords?: {year:number;kind:string;games:number;hitter:import('../domain/types').HitterStats|null;pitcher:import('../domain/types').PitcherStats|null}[]; fieldingPlay?: string; life?: import('./life').Life; moments?: import('./moments').Moment[]; }
-export interface CareerSave { youth?: YouthCareer | null; }
+export interface CareerSave { youth?: YouthCareer | null; shop?: import('./shop').ShopState; }
 export interface CareerSave { trainingHistory?: { year: number; skill: string }[]; }
 export interface CareerSave { focusSkill?: string; development?: import('./development').DevelopmentReport; }
 export interface CareerSave { contractService?: import('./contracts').ContractService; }
@@ -50,7 +50,7 @@ export function createCareer(config: { name: string; role: Role; teamId: string;
   // Replace the bench hitter or fifth starter, retaining each club's 18-player roster.
   players[players.findIndex(p => p.id === `${player.teamId}-${config.role === 'HITTER' ? 9 : 14}`)] = player;
   const save: CareerSave = { focusSkill: config.focus, schemaVersion: 1, seed, rngState: rng.state, player, players, schedule: school ? createSchoolSchedule(seed) : createSchedule(TEAMS.map(t => t.id), seed), phase: 'PRESEASON', trained: false, year: 2026, league: emptyLeague(players), seasons: [], pendingGame: null, highlightCount: 0, lastHighlight: null, pendingEvent: null, eventHistory: [], eventsThisSeason: 0, contractHistory: school ? [] : [{ teamId: player.teamId, salaryCR: 3000, years: 1, year: 2026, opportunity: player.role === 'HITTER' ? 'BENCH' : 'STARTER' }], contractOffers: [], awards: [], postseason: null, youth: school ? { schoolId: school.id, grade: 1, preferredTeamId: config.teamId, focus: config.focus ?? (player.role === 'HITTER' ? 'contact' : 'control'), trust: 20, history: [], draft: null, graduated: false, yearStartSkills: { ...player.skills } } : null };
-  life(save).style=config.style??0; life(save).appearance=config.appearance??seed%12; life(save).number=config.number??18; prepareLife(save); return save;
+  life(save).style=config.style??0; life(save).appearance=config.appearance??seed%6; life(save).number=config.number??18; prepareLife(save); return save;
 }
 export function train(save: CareerSave, skill: string): CareerSave {
   if (save.phase !== 'PRESEASON' || save.trained || !(skill in save.player.skills)) return save;

@@ -1,0 +1,24 @@
+import type {ShopItem} from '../../engine/shop';
+export default function EquipmentIcon({item}:{item:ShopItem}){
+ const premium=item.price>=2500000,metal=premium?'#f4c66b':'#acbdcf',leather=premium?'#bb7b43':'#98633e';
+ let art:React.ReactNode;
+ switch(item.icon){
+ case 'bat':art=item.id==='grip-tape'?<><path d="M8 9H23V24H8Z" fill="#243c62"/><path d="M8 9H12V24H8ZM12 10H22V13H12ZM12 17H22V20H12" fill="#607da1"/><path d="M17 13H22V17H17Z" fill="#101c30"/><path d="M9 25H24V27H9" fill={metal}/></>:<><path d="M21 3H27V9H24V13H21V17H18V20H15V23H12V27H8V24H10V21H13V18H16V15H19V10H21Z" fill={premium?'#263e60':'#ad7541'}/><path d="M22 4H25V9H23V12H20V15H18V14H20V10H22Z" fill={premium?'#f4c66b':'#edbc75'}/><path d="M8 25H12V28H7V26H8Z" fill="#d9dfdc"/></>;break;
+ case 'glove':art=item.id==='batting-gloves'?<><path d="M5 10H7V5H10V10H11V4H14V11H16V22H14V26H6V23H3V15H5Z" fill="#ece3cc"/><path d="M18 13H20V8H23V14H24V9H27V21H26V26H18V23H16V17H18Z" fill="#244263"/><path d="M5 21H14V24H5ZM19 21H26V24H19Z" fill={metal}/></>:<><path d="M7 7H10V13H11V4H14V12H16V3H19V12H21V5H24V16H27V23H24V27H10V25H6V21H4V14H7Z" fill={leather}/><path d="M11 14H22V23H11Z" fill="#d8a363"/><path d="M13 16H20V21H13Z" fill="#71452e"/><path d="M8 8H9V15H8ZM13 6H14V13H13ZM18 5H19V13H18ZM22 7H23V16H22Z" fill="#f4ce8e"/></>;break;
+ case 'shoes':art=<><path d="M5 8H13V14H17V17H23V20H28V26H4V12H5Z" fill={premium?'#e8e4d8':'#263c61'}/><path d="M5 23H28V27H4V25H5ZM5 8H9V17H6Z" fill={metal}/><path d="M12 13H16V15H12ZM15 17H20V19H15ZM19 20H24V22H19Z" fill="#e8e0cb"/><path d="M7 27H10V29H7ZM16 27H19V29H16ZM24 27H27V29H24Z" fill="#8da1b8"/></>;break;
+ case 'tee':art=<><path d="M14 12H18V25H14ZM8 25H24V28H8" fill="#496a8d"/><path d="M13 9H19V13H13Z" fill="#142640"/><path d="M13 4H19V6H21V10H19V12H13V10H11V6H13Z" fill="#f4edda"/><path d="M14 5H15V8H17V10H16" stroke="#cd6372" fill="none"/></>;break;
+ case 'ball':art=<><path d="M10 4H22V6H26V10H28V22H25V26H21V28H10V26H6V22H4V10H7V6H10Z" fill="#f0e8d8"/><path d="M7 10H10V13H12V17H10V20H7M25 10H22V13H20V17H22V20H25" fill="none" stroke="#c95465" strokeWidth="2"/>{premium&&<path d="M11 12H21V21H11Z" fill="#d5a44c"/>}</>;break;
+ case 'target':art=<><path d="M3 4H29V27H3Z" fill="#334e6d"/><path d="M6 7H26V24H6Z" fill="#ddd7c6"/><path d="M10 10H22V21H10Z" fill="#cc616b"/><path d="M14 13H19V18H14Z" fill={metal}/><path d="M2 28H30V30H2Z" fill="#172b45"/></>;break;
+ case 'goggles':art=<><path d="M3 12H13V23H5V21H3ZM19 12H29V21H27V23H19Z" fill="#345b83"/><path d="M5 14H11V19H5ZM21 14H27V19H21Z" fill="#7dd9e7"/><path d="M13 14H19V17H13ZM1 10H6V13H1ZM26 10H31V13H26Z" fill={metal}/><path d="M6 14H8V17H6ZM22 14H24V17H22Z" fill="#e1f7ef"/></>;break;
+ case 'watch':art=<><path d="M12 2H21V30H12Z" fill="#223c5c"/><path d="M8 9H25V24H8Z" fill={metal}/><path d="M11 12H22V21H11Z" fill="#13263b"/><path d="M16 13V17H20" fill="none" stroke="#6cdbbd" strokeWidth="2"/><path d="M14 3H19V5H14ZM14 26H19V28H14Z" fill="#6582a1"/></>;break;
+ case 'headset':art=<><path d="M6 8H9V5H23V8H26V23H22V11H20V9H12V11H10V23H6Z" fill={metal}/><path d="M4 15H11V25H4ZM21 15H28V25H21Z" fill="#244063"/><path d="M6 17H9V23H6ZM23 17H26V23H23Z" fill="#6681a1"/></>;break;
+ case 'monitor':art=<><path d="M3 5H29V24H3Z" fill={metal}/><path d="M6 8H26V21H6Z" fill="#102a3d"/><path d="M8 18H12V15H16V17H19V12H24" stroke="#53d7ac" strokeWidth="2" fill="none"/><path d="M14 24H19V28H24V30H9V28H14Z" fill="#6d849f"/></>;break;
+ case 'mound':art=<><path d="M8 17H24L30 26H2Z" fill="#9d734d"/><path d="M8 17H24V20H8Z" fill="#c29a68"/><path d="M13 16H21V18H13Z" fill="#f1e5cd"/><path d="M3 26H29V29H3Z" fill="#365c4a"/></>;break;
+ case 'cage':art=<><path d="M3 8H29V27H3Z" fill="#132e42"/><path d="M3 8H29V11H3ZM3 8H6V28H3ZM26 8H29V28H26Z" fill={metal}/><path d="M8 11V26M13 11V26M18 11V26M23 11V26M6 16H26M6 22H26" stroke="#50738d" fill="none"/><path d="M2 28H30V30H2Z" fill="#426d55"/></>;break;
+ case 'protector':art=<><path d="M7 4H13V8H19V4H25V11H28V23H24V28H8V23H4V11H7Z" fill="#244363"/><path d="M9 11H23V14H9ZM9 17H23V20H9ZM10 23H22V26H10Z" fill={metal}/><path d="M14 10H18V27H14Z" fill="#45658a"/></>;break;
+ case 'dumbbell':art=<><path d="M12 14H21V19H12Z" fill="#c2cbd0"/><path d="M4 9H9V24H4ZM9 6H13V27H9ZM20 6H24V27H20ZM24 9H29V24H24Z" fill="#3b5571"/><path d="M5 10H7V22H5ZM21 8H23V25H21Z" fill={metal}/></>;break;
+ case 'band':art=<><path d="M7 6H13V10H10V22H13V26H7V23H4V9H7ZM20 6H26V9H29V23H26V26H20V22H23V10H20Z" fill="#69849b"/><path d="M11 12H22V15H11ZM11 18H22V21H11Z" fill={premium?'#d59c4e':'#b25868'}/></>;break;
+ default:art=<><path d="M6 3H27V29H6Z" fill={premium?'#5a426d':'#284866'}/><path d="M11 5H25V26H11Z" fill="#e9dfc5"/><path d="M14 10H22V11H14ZM14 15H22V16H14ZM14 20H20V21H14Z" fill="#7d91a1"/><path d="M4 7H10V9H4ZM4 14H10V16H4ZM4 21H10V23H4Z" fill={metal}/></>;
+ }
+ return <svg viewBox="0 0 32 32" shapeRendering="crispEdges" aria-hidden="true"><path d="M4 30H29V31H4Z" fill="#080e19"/>{art}</svg>;
+}

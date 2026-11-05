@@ -1,6 +1,7 @@
+import {buyShopItem,shopState,SHOP_ITEMS} from '../engine/shop';
 import { expect,it } from 'vitest';
 import { createCareer } from '../engine/career';
-import { life,prepareLife,buyGrowth,credit,recover,effectiveSkills,answerMeeting,requestSalary } from '../engine/life';
+import { life,prepareLife,credit,effectiveSkills,answerMeeting,requestSalary } from '../engine/life';
 import { advanceRound,nextSeason,playPostseason,retire } from '../engine/season';
 import { developPlayer } from '../engine/development';
 import { Rng } from '../engine/rng';
@@ -17,11 +18,13 @@ it('두 능력치 자동 성장은 재시작·재결산으로 중복 지급하�
  expect(Object.keys(before).filter(k=>save.player.skills[k]!==before[k])).toHaveLength(2);
  const after=structuredClone(save);developPlayer(save,new Rng(123));expect(save).toEqual(after);
 });
-it('현금 구매는 잔액·연간 한도·상한을 지키고 무료 회복은 연간 한 번이다',()=>{
- let save=create();expect(buyGrowth(save,'power',2)).toBe(save);credit(save,'test',20000000,'검증용 자금');
- save=buyGrowth(save,'power',2);save=buyGrowth(save,'contact',2);const capped=buyGrowth(save,'eye',0);expect(capped).toBe(save);
- expect(life(save).cash).toBe(16000000);expect(life(save).purchases).toHaveLength(2);
- save.player.health=30;life(save).mentality=30;save=recover(save);expect(save.player.health).toBe(45);expect(recover(save)).toBe(save);
+it('첫 지원금 없이 시작하고 시즌 상품 3개 중 한 번만 구매한다',()=>{
+ const original=create();expect(life(original).cash).toBe(0);
+ const offers=shopState(original);expect(offers.stock).toHaveLength(3);expect(new Set(offers.stock).size).toBe(3);expect(shopState(structuredClone(original))).toEqual(offers);
+ expect(buyShopItem(original,offers.stock[0])).toBe(original);credit(original,'test-funds',50000000,'검증용 자금');
+ const item=SHOP_ITEMS.find(i=>i.id===offers.stock[0])!,bought=buyShopItem(original,item.id);
+ expect(life(bought).cash).toBe(50000000-item.price);for(const[k,g]of Object.entries(item.effects))expect(bought.player.skills[k]).toBe(Math.min(99,original.player.skills[k]+g));
+ expect(buyShopItem(bought,offers.stock[1])).toBe(bought);expect(bought.shop?.history).toHaveLength(1);expect(shopState({...bought,year:2027}).purchased).toBeNull();
 });
 it('낮은 멘탈과 건강은 원래 능력치를 보존하며 유효 경기력만 낮춘다',()=>{
  const save=create(),before={...save.player.skills};life(save).mentality=20;save.player.health=20;

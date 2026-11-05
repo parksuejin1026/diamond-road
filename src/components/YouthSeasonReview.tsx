@@ -1,0 +1,12 @@
+import type {CareerSave} from '../engine/career';
+import {teamName} from '../engine/youth';
+import {hitterRates,pitcherRates} from '../domain/calculators';
+export function YouthCareerHistory({save}:{save:CareerSave}){
+ if(!save.youth?.history.length)return null;
+ return <section className="youthCareerHistory"><h3>나의 고교 커리어 · {teamName(save.youth.schoolId)}</h3>{save.youth.history.map(y=>{const wins=y.cups.filter(c=>c.champion===save.youth!.schoolId);return <article key={y.year}><p className="eyebrow">{y.year} · 고교 {y.grade}학년</p><strong>{y.hitter?`${y.hitter.g}경기 · ${y.hitter.h}안타 · ${y.hitter.hr}홈런`:`${y.pitcher?.g??0}경기 · ${y.pitcher?.so??0}탈삼진`}</strong><p>{wins.length?wins.map(c=>`${c.name} 우승`).join(' · '):'전국대회 우승 없음'}</p><p>{y.awards?.filter(a=>!a.endsWith(' 우승')).join(' · ')||'개인 수상 기록 없음'}</p></article>;})}</section>;
+}
+export default function YouthSeasonReview({save}:{save:CareerSave}){
+ const y=save.youth?.history.find(h=>h.year===save.year);if(!y||!['SEASON_RESULT','RETIRED'].includes(save.phase))return null;
+ const wins=y.cups.filter(c=>c.champion===save.youth!.schoolId),awards=y.awards?.filter(a=>!a.endsWith(' 우승'))??[];
+ return <section className="youthSeasonReview" aria-label="고교 시즌 총평"><p className="eyebrow">YOUTH CAREER · YEAR {y.grade}</p><h3>고교 {y.grade}학년 시즌 총평</h3><p>{y.hitter?`${y.hitter.g}경기에서 타율 ${hitterRates(y.hitter).avg.toFixed(3)}, ${y.hitter.hr}홈런, ${y.hitter.rbi}타점을 기록했습니다.`:`${y.pitcher?.g??0}경기, ${Math.floor((y.pitcher?.outs??0)/3)}.${(y.pitcher?.outs??0)%3}이닝에서 ${y.pitcher?.so??0}탈삼진, 평균자책점 ${y.pitcher?pitcherRates(y.pitcher).era?.toFixed(2)??'—':'—'}를 기록했습니다.`}</p><div className="youthHonors"><div><span>전국대회 우승</span><strong>{wins.length}회</strong></div><div><span>개인상</span><strong>{awards.length}개</strong></div><div><span>종합 능력치</span><strong>{y.beforeOvr} → {y.afterOvr}</strong></div></div>{wins.map(c=><p className="honorRibbon" key={c.name}>🏆 {c.name} 우승 · {teamName(c.champion)}</p>)}{awards.map(a=><p className="honorRibbon" key={a}>★ {a}</p>)}{!wins.length&&!awards.length&&<p>우승과 개인상은 없었지만, 한 해의 출전과 성장은 고교 커리어에 남았습니다.</p>}<details><summary>대회별 활약과 수상</summary>{save.youth?.cups?.map(c=><article key={c.name}><h4>{c.name}</h4><p>우승 · {teamName(c.champion)}{c.champion===save.player.teamId?' 🏆':''}</p><p>{c.hitter?`${c.hitter.h}안타 · ${c.hitter.hr}홈런 · ${c.hitter.rbi}타점`:`${c.pitcher?.so??0}탈삼진`}</p>{c.awards?.filter(a=>a.playerId===save.player.id).map(a=><strong key={a.title}>{a.title} 수상</strong>)}</article>)}</details></section>;
+}
