@@ -1,3 +1,6 @@
+import { simulateWorld, updateMilitary, military } from './international';
+import { life, prepareLife, effectiveSkills, conditionRound, credit } from './life';
+import { recordMoment } from './moments';
 import type { GameState, HitterStats, PAResult, PitcherStats, Player, ScheduleGame } from '../domain/types';
 import type { CareerSave } from './career';
 import { overall } from '../domain/calculators';
@@ -69,8 +72,18 @@ function startGame(fixture: ScheduleGame, save: CareerSave, rotationRounds?: Rec
 }
 function sampleGamePA(save: CareerSave, players: Record<string, Player>, rng: Rng): PAResult {
   const match = currentMatch(save.pendingGame!);
-  const result = sampleAutoPA(players[match.batterId].skills, players[match.pitcherId].skills, rng);
-  return applyFielding(result, (match.defense.fielders ?? match.defense.lineup.slice(0,8)).map(id => players[id]), rng);
+  const result = sampleAutoPA(effectiveSkills(players[match.batterId],save), effectiveSkills(players[match.pitcherId],save), rng);
+  save.fieldingPlay=undefined;
+  const fielders=(match.defense.fielders??match.defense.lineup.slice(0,8)).map(id=>players[id]);
+  if((result!=='SINGLE'&&result!=='BALL_IN_PLAY_OUT')||!fielders.length)return result;
+  const fielder=fielders[rng.int(0,fielders.length-1)];
+  const adapted=fielder.id===save.player.id&&life(save).adaptation?.year===save.year?8:0;
+  const defense=effectiveSkills(fielder,save).defense-adapted;
+  const chance=Math.abs(defense-50)*.0015;
+  const roll=rng.next();
+  if(defense>50&&result==='SINGLE'&&roll<chance){save.fieldingPlay=fielder.id;return 'BALL_IN_PLAY_OUT';}
+  if(defense<50&&result==='BALL_IN_PLAY_OUT'&&roll<chance)return 'SINGLE';
+  return result;
 }
 export function simulateInternationalFixture(save: CareerSave, fixture: ScheduleGame, rng: Rng): GameResult {
   const players = Object.fromEntries(save.players.map(player => [player.id, player]));
@@ -112,6 +125,7 @@ function commitPA(save: CareerSave, result: PAResult, rng: Rng, pitches?: number
   const { side, offense, defense, batterId, pitcherId } = currentMatch(pending);
   const before = pending.game; pending.responsible[batterId] = pitcherId;
   const applied = applyPlateAppearanceOutcome(before, { paId: pendingPaId(save)!, batterId, result }, rng);
+  recordMoment(save,before,applied.game,result,batterId,pitcherId);
   pending.game = applied.game; pending.pa++; pending.prepared = false;
   const h = save.league.hitters[batterId]; const p = save.league.pitchers[pitcherId];
   h.pa++; if (result !== 'WALK') h.ab++;
@@ -151,10 +165,11 @@ function shouldHighlight(save: CareerSave) {
   return pending.game.inning >= 6 && (pending.game.bases.some(Boolean) || Math.abs(pending.game.score.home - pending.game.score.away) <= 2) && (save.player.role === 'HITTER' ? match.batterId === save.player.id : match.pitcherId === save.player.id);
 }
 export function advanceRound(original: CareerSave, options: { interactive?: boolean; autoChoices?: boolean; events?: boolean } = {}): CareerSave {
+  if(original.phase==='POSTSEASON')return playPostseason(original);
   const rounds = seasonRounds(original);
   if (!['PRESEASON', 'SIMULATING'].includes(original.phase) || original.league.round >= rounds) return original;
   if (original.pendingEvent) return advanceRound({ ...original, pendingEvent: null }, options);
-  const save = restoreAvailability(structuredClone(original)); const rng = new Rng(save.rngState); save.phase = 'SIMULATING';
+  const save = restoreAvailability(structuredClone(original)); prepareLife(save); const rng = new Rng(save.rngState); save.phase = 'SIMULATING';
   const players = Object.fromEntries(save.players.map(p => [p.id, p]));
   const round = save.league.round + 1;
   for (const fixture of save.schedule.filter(g => g.round === round)) {
@@ -170,32 +185,21 @@ export function advanceRound(original: CareerSave, options: { interactive?: bool
   }
   save.league.round = round;
   recordContractRound(save);
+  if(!isYouth(save))credit(save,`salary-${save.year}-${round}`, Math.floor(save.player.salaryCR*10000/rounds),'연봉 분할 입금');
   updateCondition(save, rng);
   save.rngState = rng.state;
   if (round === rounds && isYouth(save)) {
     finishSchoolYear(save, rng, simulateSchoolCups(save, rng));
     save.rngState = rng.state;
   } else if (round === rounds) {
-    save.awards = calculateAwards(save.league, save.players);
-    save.postseason = simulatePostseason(save, rng);
-    simulateAsianGames(save);
-    developPlayer(save, rng);
-    finishContractYear(save);
-    settleContractYear(save);
-    if (save.player.age < 38) proposeTrade(save, rng);
-    const personalAwards = save.awards.filter(award => award.playerId === save.player.id);
-    const regular = save.player.role === 'HITTER' ? (save.league.hitters[save.player.id]?.pa ?? 0) >= 300 : (save.league.pitchers[save.player.id]?.outs ?? 0) >= 180;
-    const fame = (regular ? 1 : 0) + personalAwards.length * 2 + (personalAwards.some(award => award.title === '시즌 MVP') ? 3 : 0) + (save.postseason.champion === save.player.teamId ? 3 : 0);
-    save.player.reputation = Math.min(100, (save.player.reputation ?? 0) + fame);
-    if ((save.player.contractYearsLeft ?? 1) <= 1 && save.player.age < 38) save.contractOffers = createOffers(save, rng);
-    save.rngState = rng.state;
-    save.phase = save.player.age >= 38 ? 'RETIRED' : 'SEASON_RESULT';
-    save.seasons.push({ year: save.year, age: save.player.age, teamId: save.player.teamId, hitter: save.league.hitters[save.player.id] ? { ...save.league.hitters[save.player.id] } : null, pitcher: save.league.pitchers[save.player.id] ? { ...save.league.pitchers[save.player.id] } : null, rank: standings(save.league).findIndex(t => t.teamId === save.player.teamId) + 1, ovr: overall(save.player), awards: save.awards.filter(a => a.playerId === save.player.id).map(a => a.title), championship: save.postseason.champion === save.player.teamId });
+    save.awards=calculateAwards(save.league,save.players);
+    save.phase='POSTSEASON';
   }
   awardCareerGoal(save);
   return save;
 }
 function updateCondition(save: CareerSave, rng: Rng) {
+  conditionRound(save,rng);
   const player = save.player; const round = save.league.round;
   if (isYouth(save)) {
     save.youth!.trust = Math.min(100, save.youth!.trust + 3);
@@ -206,7 +210,7 @@ function updateCondition(save: CareerSave, rng: Rng) {
   save.players = save.players.map(p => p.id === player.id ? player : p);
 }
 function simulatePostseason(save: CareerSave, rng: Rng) {
-  const post = { ...save, league: emptyLeague(save.players), pendingGame: null } as CareerSave;
+  const post = { ...save, moments: save.moments ??= [], league: emptyLeague(save.players), pendingGame: null } as CareerSave;
   const ranked = standings(save.league).map(t => t.teamId);
   const players = Object.fromEntries(save.players.map(p => [p.id, p]));
   let gameNumber = 0;
@@ -254,6 +258,7 @@ export function resolveHighlight(original: CareerSave, paId: string, result?: PA
 }
 export function nextSeason(save: CareerSave): CareerSave {
   if (save.phase !== 'SEASON_RESULT') return save;
+  save=structuredClone(save);
   if (isYouth(save)) return nextSchoolYear(save);
   if (save.player.age >= 38) return { ...save, phase: 'RETIRED' };
   if (save.pendingTrade) throw new Error('트레이드 제안에 답한 뒤 다음 시즌으로 진행해 주세요.');
@@ -265,6 +270,7 @@ export function nextSeason(save: CareerSave): CareerSave {
     if (signed === save) throw new Error('계약 자격을 확인한 후 제안을 선택해 주세요.');
     save = signed;
   }
+  if(['SANGMU','REGULAR'].includes(military(save).status))save=completeMilitary(save);
   const rng = new Rng(save.rngState); const player = structuredClone(save.player);
   // Old result saves have not received season-end growth; preserve their one-time transition.
   const growth = save.development?.year === save.year ? 0 : player.age < 25 ? rng.int(1, 3) : player.age < 30 ? rng.int(0, 2) : player.age < 33 ? rng.int(-1, 1) : -rng.int(1, 3);
@@ -287,9 +293,15 @@ export function nextSeason(save: CareerSave): CareerSave {
   });
   const missingTeams = TEAMS.filter(t => !players.some(p => p.teamId === t.id));
   players.push(...createRoster(missingTeams, rng));
-  return { ...save, contractService: { ...contractService(save), activeRounds: 0 }, year: save.year + 1, player, players, trained: false, phase: 'PRESEASON', rngState: rng.state, league: emptyLeague(players), schedule: createSchedule(TEAMS.map(t => t.id), rng.state), pendingGame: null, highlightCount: 0, lastHighlight: null, pendingEvent: null, eventsThisSeason: 0, contractOffers: [], awards: [], postseason: null, contractHistory };
+  const next: CareerSave = { ...save, contractService: { ...contractService(save), activeRounds: 0 }, year: save.year + 1, player, players, trained: false, phase: 'PRESEASON', rngState: rng.state, league: emptyLeague(players), schedule: createSchedule(TEAMS.map(t => t.id), rng.state), pendingGame: null, highlightCount: 0, lastHighlight: null, pendingEvent: null, eventsThisSeason: 0, contractOffers: [], awards: [], postseason: null, contractHistory };
+  prepareLife(next); return next;
 }
-export function retire(save: CareerSave): CareerSave { return save.phase === 'SEASON_RESULT' && save.player.age >= 35 ? { ...save, phase: 'RETIRED', contractOffers: [] } : save; }
+export function retire(original: CareerSave): CareerSave {
+  if(original.phase==='RETIRED'||original.pendingGame)return original;
+  const save=structuredClone(original);
+  if(!isYouth(save)&&save.league.round>0&&!save.seasons.some(s=>s.year===save.year))save.seasons.push({year:save.year,age:save.player.age,teamId:save.player.teamId,hitter:save.league.hitters.user?{...save.league.hitters.user}:null,pitcher:save.league.pitchers.user?{...save.league.pitchers.user}:null,rank:standings(save.league).findIndex(t=>t.teamId===save.player.teamId)+1,ovr:overall(save.player),awards:[],championship:false});
+  save.phase='RETIRED';save.contractOffers=[];save.pendingTrade=null;return save;
+}
 function simulateSchoolCups(save: CareerSave, rng: Rng): SchoolCup[] {
   const players = Object.fromEntries(save.players.map(p => [p.id, p]));
   const cups: SchoolCup[] = [];
@@ -323,4 +335,50 @@ function simulateSchoolCups(save: CareerSave, rng: Rng): SchoolCup[] {
     cups.push({ name, champion: entrants[0], games: post.league.results, hitter: post.league.hitters[save.player.id] ? { ...post.league.hitters[save.player.id] } : null, pitcher: post.league.pitchers[save.player.id] ? { ...post.league.pitchers[save.player.id] } : null });
   }
   return cups;
+}
+
+function completeMilitary(original:CareerSave):CareerSave {
+  const save=structuredClone(original),state=military(save),sangmu=state.status==='SANGMU';
+  const rng=new Rng((save.seed^save.year*6151)>>>0);
+  const cup:CareerSave={...save,life:structuredClone(life(save)),player:structuredClone(save.player),players:structuredClone(save.players),moments:[],league:emptyLeague(save.players),pendingGame:null};
+  cup.player.rosterStatus='STARTER';cup.players=cup.players.map(p=>p.id===cup.player.id?cup.player:p);
+  const opponent=save.players.find(p=>p.teamId!==save.player.teamId)!.teamId;
+  if(sangmu)for(let i=0;i<60;i++)simulateInternationalFixture(cup,{id:`sangmu-${save.year}-${i}`,round:i+1,homeTeamId:i%2?save.player.teamId:opponent,awayTeamId:i%2?opponent:save.player.teamId},rng);
+  save.serviceRecords=[...(save.serviceRecords??[]),{year:save.year+1,kind:sangmu?'상무 퓨처스':'일반 복무',games:sangmu?60:0,hitter:sangmu&&save.player.role==='HITTER'?cup.league.hitters.user:null,pitcher:sangmu&&save.player.role==='PITCHER'?cup.league.pitchers.user:null}];
+  for(const key of Object.keys(save.player.skills))save.player.skills[key]=Math.max(1,Math.min(99,save.player.skills[key]+(sangmu?rng.int(1,3):-rng.int(0,2))));
+  // Enlist next January, serve 18 months, then return at the following preseason.
+  save.year+=2;save.player.age+=2;
+  save.players=save.players.map(p=>p.id===save.player.id?save.player:{...p,age:p.age+2});
+  save.contractHistory=save.contractHistory.map(c=>c.year+c.years>original.year?{...c,year:c.year+2}:c);
+  state.status='COMPLETED';state.monthsServed=18;
+  state.history.push({year:save.year,text:'18개월 복무 완료. 두 시즌의 KBO 공백 후 다음 프리시즌에 원소속팀으로 복귀합니다. 복무 기간의 FA 등록일과 KBO 연봉은 누적되지 않습니다.'});
+  save.development={year:save.year,focus:'mental',beforeSkills:{...save.player.skills},afterSkills:{...save.player.skills},beforeOvr:overall(save.player),afterOvr:overall(save.player)};
+  return save;
+}
+
+export function playPostseason(original:CareerSave):CareerSave {
+  if(original.phase!=='POSTSEASON')return original;
+  const save=structuredClone(original),rng=new Rng(save.rngState);
+    save.awards = calculateAwards(save.league, save.players);
+    save.postseason = simulatePostseason(save, rng);
+    if(save.postseason.champion===save.player.teamId){
+      save.moments??=[];
+      const last=save.postseason.games.at(-1)!;
+      save.moments.push({id:`champion-${save.year}`,year:save.year,kind:'CHAMPION',name:save.player.name,inning:last.innings,outs:3,bases:0,before:`${last.away} : ${last.home}`,after:`${last.away} : ${last.home}`,walkoff:false,grandSlam:false,stage:'한국시리즈 우승'});
+      credit(save,`champion-prize-${save.year}`,10000000,'한국시리즈 우승 상금');
+    }
+    simulateAsianGames(save); simulateWorld(save); updateMilitary(save);
+    developPlayer(save, rng);
+    finishContractYear(save);
+    settleContractYear(save);
+    if (save.player.age < 38) proposeTrade(save, rng);
+    const personalAwards = save.awards.filter(award => award.playerId === save.player.id);
+    const regular = save.player.role === 'HITTER' ? (save.league.hitters[save.player.id]?.pa ?? 0) >= 300 : (save.league.pitchers[save.player.id]?.outs ?? 0) >= 180;
+    const fame = (regular ? 1 : 0) + personalAwards.length * 2 + (personalAwards.some(award => award.title === '시즌 MVP') ? 3 : 0) + (save.postseason.champion === save.player.teamId ? 3 : 0);
+    save.player.reputation = Math.min(100, (save.player.reputation ?? 0) + fame);
+    if ((save.player.contractYearsLeft ?? 1) <= 1 && save.player.age < 38) save.contractOffers = createOffers(save, rng);
+    save.rngState = rng.state;
+    save.phase = save.player.age >= 38 ? 'RETIRED' : 'SEASON_RESULT';
+    save.seasons.push({ year: save.year, age: save.player.age, teamId: save.player.teamId, hitter: save.league.hitters[save.player.id] ? { ...save.league.hitters[save.player.id] } : null, pitcher: save.league.pitchers[save.player.id] ? { ...save.league.pitchers[save.player.id] } : null, rank: standings(save.league).findIndex(t => t.teamId === save.player.teamId) + 1, ovr: overall(save.player), awards: save.awards.filter(a => a.playerId === save.player.id).map(a => a.title), championship: save.postseason.champion === save.player.teamId });
+  awardCareerGoal(save);return save;
 }

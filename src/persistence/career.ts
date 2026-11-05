@@ -1,3 +1,4 @@
+import { prepareLife } from '../engine/life';
 import type { CareerSave } from '../engine/career';
 import { emptyLeague, emptyHitter, emptyPitcher } from '../engine/season';
 import { restoreAvailability } from '../engine/availability';
@@ -26,7 +27,7 @@ async function access(mode: IDBTransactionMode, operation: (store: IDBObjectStor
 export async function saveCareer(save: CareerSave) {
   await access('readwrite', store => {
     const previous = store.get('active');
-    previous.onsuccess = () => { if (previous.result) store.put(previous.result, 'backup'); store.put(save, 'active'); };
+    previous.onsuccess = () => { if (previous.result) store.put(previous.result, 'backup'); store.put(save, 'active'); if(save.phase==='RETIRED')store.put(save,`archive-${save.seed}-${save.player.name}`); };
     return previous;
   });
   setRecoveryNotice('');
@@ -48,7 +49,7 @@ export async function loadCareer(): Promise<CareerSave | null> {
 async function loadCandidate(key: string): Promise<CareerSave | null> {
   let value = await access('readonly', store => store.get(key)) as CareerSave | undefined;
   if (!value) return null;
-  if (value.schemaVersion !== 1 || !['PRESEASON', 'SIMULATING', 'HIGHLIGHT_READY', 'MINI_GAME', 'DRAFT', 'SEASON_RESULT', 'RETIRED'].includes(value.phase) || !value.player || !value.player.skills || !Array.isArray(value.players) || !Array.isArray(value.schedule) || ![560, 720, 728].includes(value.schedule.length)) throw new Error('지원하지 않거나 손상된 저장 데이터입니다.');
+  if (value.schemaVersion !== 1 || !['POSTSEASON', 'PRESEASON', 'SIMULATING', 'HIGHLIGHT_READY', 'MINI_GAME', 'DRAFT', 'SEASON_RESULT', 'RETIRED'].includes(value.phase) || !value.player || !value.player.skills || !Array.isArray(value.players) || !Array.isArray(value.schedule) || ![560, 720, 728].includes(value.schedule.length)) throw new Error('지원하지 않거나 손상된 저장 데이터입니다.');
   value = migrateTeamNames(value);
   // Upgrade the initial development save without discarding the created player.
   if (!value.league && value.phase === 'PRESEASON') { value.league = emptyLeague(value.players); value.year = 2026; value.seasons = []; }
@@ -58,6 +59,11 @@ async function loadCandidate(key: string): Promise<CareerSave | null> {
   if (['HIGHLIGHT_READY', 'MINI_GAME'].includes(value.phase) && !value.pendingGame) throw new Error('중요 상황 저장 데이터가 손상되었습니다.');
   if (!value.league || !Number.isInteger(value.league.round) || value.league.round < 0 || value.league.round > Math.max(...value.schedule.map(g => g.round)) || !Array.isArray(value.league.results) || !Array.isArray(value.seasons) || !value.league.hitters || !value.league.pitchers || !Array.isArray(value.league.standings)) throw new Error('시즌 저장 데이터가 손상되었습니다.');
   const validInt = (n: unknown) => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
+  if(value.life){
+    const state=value.life;
+    if(state.version!==1||!validInt(state.cash)||!validInt(state.mentality)||state.mentality>100||!validInt(state.style)||state.style>2||!validInt(state.appearance)||state.appearance>11||!validInt(state.number)||state.number<1||state.number>99||!['BALANCED','FOOD','HOBBY','REST'].includes(state.routine)||!Array.isArray(state.ledger)||!Array.isArray(state.purchases)||!Array.isArray(state.salaryRequests)||!Array.isArray(state.news)||new Set(state.ledger.map(r=>r.id)).size!==state.ledger.length||state.ledger.some(r=>typeof r.id!=='string'||!Number.isSafeInteger(r.amount)||!validInt(r.year)||typeof r.reason!=='string')||state.purchases.some(p=>!validInt(p.year)||!Number.isInteger(p.gain)||p.gain<1||p.gain>3)||!validInt(value.player.health)||value.player.health>100)throw new Error('현금·생활 관리 저장 데이터가 손상되었습니다.');
+    if(state.growth&&(!validInt(state.growth.year)||!Array.isArray(state.growth.skills)||!Array.isArray(state.growth.gains)||state.growth.skills.length>2||state.growth.skills.length!==state.growth.gains.length||new Set(state.growth.skills).size!==state.growth.skills.length||state.growth.skills.some(k=>!(k in value.player.skills))||state.growth.gains.some(g=>!validInt(g))))throw new Error('자동 성장 저장 데이터가 손상되었습니다.');
+  }
   if (value.items) {
     const items = value.items;
     if (!Array.isArray(items.inventory) || items.inventory.some(id => !TRAINING_ITEMS.some(item => item.id === id)) || [items.openedYears, items.usedYears].some(years => !Array.isArray(years) || new Set(years).size !== years.length || years.some(year => !validInt(year) || year > value.year))) throw new Error('아이템 저장 데이터가 손상되었습니다.');
@@ -96,6 +102,7 @@ async function loadCandidate(key: string): Promise<CareerSave | null> {
     if (!stats || Object.keys(expected).some(k => !validInt((stats as unknown as Record<string, number>)[k]))) throw new Error('기록 저장 데이터가 손상되었습니다.');
   }
   if (value.pendingGame && (!Array.isArray(value.pendingGame.clubs) || value.pendingGame.clubs.length !== 2 || !value.pendingGame.game || !validInt(value.pendingGame.pa) || value.pendingGame.fixture.round !== value.league.round + 1 || !validInt(value.pendingGame.game.outs) || value.pendingGame.game.outs > 2)) throw new Error('진행 중인 경기 저장이 손상되었습니다.');
-  const restored = restoreAvailability(value); awardCareerGoal(restored); return restored;
+  const restored = restoreAvailability(value); if(!restored.life)prepareLife(restored); awardCareerGoal(restored); return restored;
 }
-export async function deleteCareer() { await access('readwrite', store => store.clear()); setRecoveryNotice(''); }
+export async function archivedCareers():Promise<CareerSave[]> { return (await access('readonly',store=>store.getAll()) as CareerSave[]).filter((s,i,all)=>s.phase==='RETIRED'&&all.findIndex(v=>v.seed===s.seed&&v.player.name===s.player.name)===i); }
+export async function deleteCareer() { await access('readwrite', store => store.delete('active')); await access('readwrite',store=>store.delete('backup')); setRecoveryNotice(''); }

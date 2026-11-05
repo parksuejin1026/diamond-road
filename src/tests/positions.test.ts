@@ -7,7 +7,7 @@ it('포지션을 저장하고 개막 뒤에는 변경하지 않는다', () => {
   const save = createCareer({ name: '우익수', role: 'HITTER', teamId: 'lg', hand: 'RIGHT', position: 'RF' }, 1);
   expect(save.player.position).toBe('RF');
   const next = selectPosition(save, 'SS');
-  expect(next.player.position).toBe('SS'); expect(next.players.find(p => p.id === next.player.id)?.position).toBe('SS');
+  expect(next).toBe(save); expect(next.player.position).toBe('RF');
   const running = { ...next, phase: 'SIMULATING' as const };
   expect(selectPosition(running, 'DH')).toBe(running);
   expect(() => createCareer({ name: '투수', role: 'PITCHER', teamId: 'lg', hand: 'RIGHT', position: 'RF' }, 1)).toThrow();

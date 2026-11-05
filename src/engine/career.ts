@@ -1,3 +1,4 @@
+import { prepareLife, life } from './life';
 import type { Player, Role, ScheduleGame } from '../domain/types';
 import { Rng } from './rng';
 import { createSchedule, TEAMS } from './schedule';
@@ -9,6 +10,7 @@ import { createRoster, PLAYER_STYLES } from './roster';
 import { SCHOOLS, createSchoolSchedule } from './schools';
 import type { YouthCareer } from './youth';
 import { FIELD_POSITIONS } from './positions';
+export interface CareerSave { military?: import('./international').Military; world?: import('./international').WorldReport[]; serviceRecords?: {year:number;kind:string;games:number;hitter:import('../domain/types').HitterStats|null;pitcher:import('../domain/types').PitcherStats|null}[]; fieldingPlay?: string; life?: import('./life').Life; moments?: import('./moments').Moment[]; }
 export interface CareerSave { youth?: YouthCareer | null; }
 export interface CareerSave { trainingHistory?: { year: number; skill: string }[]; }
 export interface CareerSave { focusSkill?: string; development?: import('./development').DevelopmentReport; }
@@ -17,9 +19,10 @@ export interface CareerSave { asianGames?: import('./asianGames').AsianGamesRepo
 export interface CareerSave { items?: import('./items').ItemState; }
 export interface CareerSave { mvpReward?: { year: number; title: string }; }
 export interface CareerSave { pendingTrade?: import('./contracts').Contract | null; contractSettlements?: import('./contracts').ContractSettlement[]; }
-export interface CareerSave { schemaVersion: 1; seed: number; rngState: number; player: Player; players: Player[]; schedule: ScheduleGame[]; phase: 'PRESEASON' | 'SIMULATING' | 'HIGHLIGHT_READY' | 'MINI_GAME' | 'DRAFT' | 'SEASON_RESULT' | 'RETIRED'; trained: boolean; year: number; league: LeagueSeason; seasons: SeasonSnapshot[]; pendingGame: PendingGame | null; highlightCount: number; lastHighlight: HighlightFeedback | null; pendingEvent: string | null; eventHistory: EventRecord[]; eventsThisSeason: number; contractHistory: Contract[]; contractOffers: Contract[]; awards: Award[]; postseason: { champion: string; games: import('./season').GameResult[] } | null; }
-export function createCareer(config: { name: string; role: Role; teamId: string; hand: 'LEFT' | 'RIGHT'; schoolId?: string; style?: number; focus?: string; position?: import('../domain/types').FieldPosition }, seed: number): CareerSave {
+export interface CareerSave { schemaVersion: 1; seed: number; rngState: number; player: Player; players: Player[]; schedule: ScheduleGame[]; phase: 'POSTSEASON' | 'PRESEASON' | 'SIMULATING' | 'HIGHLIGHT_READY' | 'MINI_GAME' | 'DRAFT' | 'SEASON_RESULT' | 'RETIRED'; trained: boolean; year: number; league: LeagueSeason; seasons: SeasonSnapshot[]; pendingGame: PendingGame | null; highlightCount: number; lastHighlight: HighlightFeedback | null; pendingEvent: string | null; eventHistory: EventRecord[]; eventsThisSeason: number; contractHistory: Contract[]; contractOffers: Contract[]; awards: Award[]; postseason: { champion: string; games: import('./season').GameResult[] } | null; }
+export function createCareer(config: { name: string; role: Role; teamId: string; hand: 'LEFT' | 'RIGHT'; schoolId?: string; appearance?: number; number?: number; style?: number; focus?: string; position?: import('../domain/types').FieldPosition }, seed: number): CareerSave {
   const name = config.name.trim();
+  if(config.appearance!==undefined&&(!Number.isInteger(config.appearance)||config.appearance<0||config.appearance>11)||config.number!==undefined&&(!Number.isInteger(config.number)||config.number<1||config.number>99))throw new Error('선수 외형과 등번호를 확인해 주세요.');
   if (!name || [...name].length > 12) throw new Error('이름은 1~12자로 입력해 주세요.');
   if (!TEAMS.some(t => t.id === config.teamId) || !['HITTER', 'PITCHER'].includes(config.role) || !['LEFT', 'RIGHT'].includes(config.hand)) throw new Error('선수 설정을 확인해 주세요.');
   const rng = new Rng(seed);
@@ -46,7 +49,8 @@ export function createCareer(config: { name: string; role: Role; teamId: string;
   }
   // Replace the bench hitter or fifth starter, retaining each club's 18-player roster.
   players[players.findIndex(p => p.id === `${player.teamId}-${config.role === 'HITTER' ? 9 : 14}`)] = player;
-  return { focusSkill: config.focus, schemaVersion: 1, seed, rngState: rng.state, player, players, schedule: school ? createSchoolSchedule(seed) : createSchedule(TEAMS.map(t => t.id), seed), phase: 'PRESEASON', trained: false, year: 2026, league: emptyLeague(players), seasons: [], pendingGame: null, highlightCount: 0, lastHighlight: null, pendingEvent: null, eventHistory: [], eventsThisSeason: 0, contractHistory: school ? [] : [{ teamId: player.teamId, salaryCR: 3000, years: 1, year: 2026, opportunity: player.role === 'HITTER' ? 'BENCH' : 'STARTER' }], contractOffers: [], awards: [], postseason: null, youth: school ? { schoolId: school.id, grade: 1, preferredTeamId: config.teamId, focus: config.focus ?? (player.role === 'HITTER' ? 'contact' : 'control'), trust: 20, history: [], draft: null, graduated: false, yearStartSkills: { ...player.skills } } : null };
+  const save: CareerSave = { focusSkill: config.focus, schemaVersion: 1, seed, rngState: rng.state, player, players, schedule: school ? createSchoolSchedule(seed) : createSchedule(TEAMS.map(t => t.id), seed), phase: 'PRESEASON', trained: false, year: 2026, league: emptyLeague(players), seasons: [], pendingGame: null, highlightCount: 0, lastHighlight: null, pendingEvent: null, eventHistory: [], eventsThisSeason: 0, contractHistory: school ? [] : [{ teamId: player.teamId, salaryCR: 3000, years: 1, year: 2026, opportunity: player.role === 'HITTER' ? 'BENCH' : 'STARTER' }], contractOffers: [], awards: [], postseason: null, youth: school ? { schoolId: school.id, grade: 1, preferredTeamId: config.teamId, focus: config.focus ?? (player.role === 'HITTER' ? 'contact' : 'control'), trust: 20, history: [], draft: null, graduated: false, yearStartSkills: { ...player.skills } } : null };
+  life(save).style=config.style??0; life(save).appearance=config.appearance??seed%12; life(save).number=config.number??18; prepareLife(save); return save;
 }
 export function train(save: CareerSave, skill: string): CareerSave {
   if (save.phase !== 'PRESEASON' || save.trained || !(skill in save.player.skills)) return save;

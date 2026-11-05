@@ -1,3 +1,4 @@
+import { credit, life } from './life';
 import type { CareerSave } from './career';
 import { overall, hitterRates, pitcherRates } from '../domain/calculators';
 import { TEAMS } from './schedule';
@@ -60,6 +61,9 @@ export function settleContractYear(save: CareerSave) {
   const option = active?.option;
   const count = option?.metric === 'HITS' ? save.league.hitters[save.player.id]?.h ?? 0 : save.league.pitchers[save.player.id]?.so ?? 0;
   const optionAchieved = !!option && count >= option.target;
+  const paid=life(save).ledger.filter(r=>r.id.startsWith(`salary-${save.year}-`)).reduce((n,r)=>n+r.amount,0);
+  credit(save,`salary-final-${save.year}`,Math.max(0,save.player.salaryCR*10000-paid),'연봉 잔액 정산');
+  credit(save,`option-${save.year}`,optionAchieved?option!.bonusCR*10000:0,'성적 옵션 정산');
   save.contractSettlements = [...(save.contractSettlements ?? []), { year: save.year, teamId: save.player.teamId, salaryCR: save.player.salaryCR, signingBonusCR: active?.year === save.year ? active.signingBonusCR ?? 0 : 0, optionBonusCR: optionAchieved ? option!.bonusCR : 0, optionAchieved }];
 }
 export function proposeTrade(save: CareerSave, rng: Rng) {
@@ -94,6 +98,12 @@ export function signContract(original: CareerSave, index: number): CareerSave {
   if (offer.kind === 'FA' && !faProgress(save).eligible) return original;
   if (offer.kind === 'RENEWAL' && offer.teamId !== save.player.teamId) return original;
   const oldTeam = save.player.teamId;
+  if(offer.signingBonusCR)credit(save,`signing-${offer.year}-${offer.teamId}`,offer.signingBonusCR*10000,'계약금');
+  if(offer.kind==='FA'&&offer.teamId!==oldTeam){
+    const tenure=save.seasons.filter(s=>s.teamId===oldTeam).length;
+    life(save).news.push({year:save.year,text:tenure>=5?'오랜 소속을 떠나는 FA 이적에 친정 팬들의 야유가 쏟아집니다. 새로운 유니폼에서 증명할 시간입니다.':'새 구단에서 새로운 도전을 시작합니다.'});
+    if(tenure>=5)life(save).mentality=Math.max(20,life(save).mentality-8);
+  }
   if (offer.teamId !== oldTeam) {
     const replacement = save.players.find(p => p.teamId === offer.teamId && p.role === save.player.role && p.id !== save.player.id);
     if (!replacement) return original;

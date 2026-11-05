@@ -1,7 +1,8 @@
+import { contractMoney } from '../engine/life';
 import type { CareerSave } from '../engine/career';
 import { isYouth, teamName, signDraft } from '../engine/youth';
 import { overall } from '../domain/calculators';
-const labels: Record<string, string> = { contact: '컨택', power: '파워', eye: '선구안', speed: '주력', defense: '수비', mental: '멘탈', velocity: '구속', control: '제구', breaking: '변화구', stamina: '체력' };
+const labels: Record<string, string> = { contact: '컨택', power: '파워', eye: '선구안', speed: '주력', defense: '수비', mental: '정신력', velocity: '구속', control: '제구', breaking: '변화구', stamina: '체력' };
 export default function YouthPanel({ save, busy, update }: { save: CareerSave; busy: boolean; update: (save: CareerSave) => void }) {
   const youth = save.youth; if (!youth) return null;
   const last = youth.history.at(-1);
@@ -10,7 +11,7 @@ export default function YouthPanel({ save, busy, update }: { save: CareerSave; b
     <p>{teamName(youth.schoolId)} · 고교 3시즌 · OVR {overall(save.player)}</p>
     <div className="draftTeam">{teamName(youth.draft.teamId)}</div>
     <p>{youth.draft.round ? `${youth.draft.round}라운드 · 전체 ${youth.draft.overallPick}순위 지명` : '육성선수 입단 테스트 제안'}</p>
-    <p>계약금 {youth.draft.signingBonusCR.toLocaleString()} CR · 연봉 {(youth.draft.round ? youth.draft.salaryCR : 2000).toLocaleString()} CR</p>
+    <p>계약금 {contractMoney(youth.draft.signingBonusCR)} · 연봉 {contractMoney((youth.draft.round ? youth.draft.salaryCR : 2000))}</p>
     <p className="footnote">고교 활약·성장·전국대회 성과를 반영한 게임 속 드래프트 결과입니다.</p>
     <button className="primary" disabled={busy} onClick={() => update(signDraft(save))}>{youth.draft.round ? '프로 입단 계약' : '육성선수로 도전'}</button>
   </section>;

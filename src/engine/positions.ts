@@ -11,6 +11,7 @@ export function positionName(player: Player) {
   return player.role === 'HITTER' ? FIELD_POSITIONS.find(p => p.id === (player.position ?? 'DH'))?.name ?? '지명타자' : player.pitchingRole === 'RELIEVER' ? '구원투수' : player.pitchingRole === 'STARTER' ? '선발투수' : '투수';
 }
 export function selectPosition(save: CareerSave, position: FieldPosition): CareerSave {
+  if (save.life) return save;
   if (save.phase !== 'PRESEASON' || save.player.role !== 'HITTER' || !FIELD_POSITIONS.some(p => p.id === position)) return save;
   const player = { ...save.player, position };
   return { ...save, player, players: save.players.map(p => p.id === player.id ? player : p) };

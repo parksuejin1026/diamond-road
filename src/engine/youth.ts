@@ -1,3 +1,5 @@
+import { developPlayer } from './development';
+import { prepareLife, credit } from './life';
 import type { CareerSave } from './career';
 import type { HitterStats, PitcherStats, Skills } from '../domain/types';
 import { overall, hitterRates, pitcherRates } from '../domain/calculators';
@@ -21,13 +23,8 @@ export function finishSchoolYear(save: CareerSave, rng: Rng, cups: SchoolCup[]) 
     if (h && cup.hitter) for (const k of Object.keys(h) as (keyof HitterStats)[]) h[k] = (h[k] ?? 0) + (cup.hitter[k] ?? 0);
     if (p && cup.pitcher) for (const k of Object.keys(p) as (keyof PitcherStats)[]) p[k] += cup.pitcher[k];
   }
-  const appearances = h ? h.pa : p ? p.outs : 0;
-  const room = Math.max(0, save.player.potential - overall(save.player));
-  const growth = rng.int(4, 7) + (appearances > 30 ? 1 : 0);
-  for (const key of Object.keys(save.player.skills)) {
-    const change = Math.max(0, Math.min(room, growth + rng.int(-1, 1) + (key === youth.focus ? 2 : 0)));
-    save.player.skills[key] = Math.min(99, save.player.skills[key] + change);
-  }
+  developPlayer(save,rng);
+  credit(save,`youth-${save.year}`,1000000,'고교 육성 지원금');
   save.players = save.players.map(p => p.id === save.player.id ? save.player : p);
   youth.cups = cups;
   youth.history.push({ year: save.year, age: save.player.age, grade: youth.grade, hitter: h ? { ...h } : null, pitcher: p ? { ...p } : null, beforeOvr, afterOvr: overall(save.player), beforeSkills, afterSkills: { ...save.player.skills }, cups: cups.map(c => ({ name: c.name, champion: c.champion })) });
@@ -59,7 +56,7 @@ export function nextSchoolYear(original: CareerSave): CareerSave {
   save.league = emptyLeague(save.players); save.schedule = createSchoolSchedule(save.seed);
   save.phase = 'PRESEASON'; save.trained = false; save.highlightCount = 0; save.pendingGame = null; save.lastHighlight = null; save.pendingEvent = null; save.eventsThisSeason = 0;
   youth.yearStartSkills = { ...save.player.skills }; save.rngState = rng.state;
-  return save;
+  prepareLife(save); return save;
 }
 export function signDraft(original: CareerSave): CareerSave {
   if (original.phase !== 'DRAFT' || !isYouth(original) || !original.youth?.draft) return original;
@@ -72,6 +69,7 @@ export function signDraft(original: CareerSave): CareerSave {
   const slot = save.players.findIndex(p => p.id === draft.teamId + '-' + (save.player.role === 'HITTER' ? 9 : 14)); save.players[slot] = save.player;
   save.year++; save.schedule = createSchedule(TEAMS.map(t => t.id), rng.state); save.league = emptyLeague(save.players);
   save.phase = 'PRESEASON'; save.trained = false; save.highlightCount = 0; save.pendingGame = null; save.lastHighlight = null; save.pendingEvent = null; save.eventsThisSeason = 0; save.awards = []; save.postseason = null;
+  if(draft.round)credit(save,`signing-${save.year}-${draft.teamId}`,draft.signingBonusCR*10000,'신인 계약금');
   save.contractHistory = [{ year: save.year, teamId: draft.teamId, salaryCR: save.player.salaryCR, years: 1, opportunity: save.player.role === 'HITTER' ? 'BENCH' : 'STARTER', kind: 'DRAFT', signingBonusCR: draft.round ? draft.signingBonusCR : 0 }]; save.rngState = rng.state;
-  return save;
+  prepareLife(save); return save;
 }

@@ -1,0 +1,22 @@
+{
+  "retrieved":"2026-11-05",
+  "scope":"KBO 통산 기록만 사용. 해외·포스트시즌 제외. 시대 보정 없는 제한 표본.",
+  "hitterSource":"https://www.koreabaseball.com/Record/Player/HitterBasic/BasicTotal.aspx",
+  "pitcherSource":"https://www.koreabaseball.com/Record/Player/PitcherBasic/BasicTotal.aspx",
+  "hitters":[
+    {"name":"이승엽","g":1906,"ab":7132,"h":2156,"hr":467,"bb":953},
+    {"name":"박용택","g":2237,"ab":8139,"h":2504,"hr":213,"bb":793},
+    {"name":"이대호","g":1971,"ab":7118,"h":2199,"hr":374,"bb":745},
+    {"name":"양준혁","g":2135,"ab":7332,"h":2318,"hr":351,"bb":1278},
+    {"name":"장효조","g":964,"ab":3050,"h":1008,"hr":54,"bb":506},
+    {"name":"정근우","g":1747,"ab":6219,"h":1877,"hr":121,"bb":665}
+  ],
+  "pitchers":[
+    {"name":"선동열","g":367,"outs":4941,"so":1698,"er":220,"wins":146},
+    {"name":"최동원","g":248,"outs":4244,"so":1019,"er":387,"wins":103},
+    {"name":"구대성","g":569,"outs":3386,"so":1221,"er":357,"wins":67},
+    {"name":"김용수","g":613,"outs":5494,"so":1145,"er":606,"wins":126},
+    {"name":"윤학길","g":308,"outs":5591,"so":916,"er":689,"wins":117},
+    {"name":"조웅천","g":813,"outs":3278,"so":920,"er":390,"wins":64}
+  ]
+}

@@ -60,7 +60,7 @@ test('FA 전 연봉 협상과 자동 잔류 재계약을 저장한다', async ({
   await page.getByRole('button', { name: '성장 반영 · 다음 시즌 →' }).click();
   await expect(page.getByText('2027년 · 0 / 144', { exact: false })).toBeVisible();
   const next = await readSave(page);
-  await expect(page.getByRole('button', { name: '시즌 전체 자동 진행 →' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '시즌 전체 자동 진행 →' })).toBeEnabled();
   expect(next.player.teamId).toBe('lg'); expect(next.player.salaryCR).toBe(negotiated);
   expect(next.contractHistory.at(-1)?.kind).toBe('RENEWAL');
   await page.reload(); await expect(page.getByRole('button', { name: '시즌 준비하기 →' })).toBeVisible();
@@ -111,8 +111,7 @@ test('고교 3년과 드래프트를 자동 시즌으로 완주한다', async ({
   await page.getByRole('button', { name: '나의 커리어 시작하기 →' }).click();
   await page.getByRole('button', { name: '시즌 준비하기 →' }).click();
   for (let grade = 1; grade <= 3; grade++) {
-    await expect(page.getByRole('button', { name: '시즌 전체 자동 진행 →' })).toBeDisabled();
-    await page.getByRole('button', { name: '컨택 +2', exact: true }).click();
+    await expect(page.getByRole('button', { name: '시즌 전체 자동 진행 →' })).toBeEnabled();
     await page.getByRole('button', { name: '시즌 전체 자동 진행 →' }).click();
     const next = page.getByRole('button', { name: grade === 3 ? '신인 드래프트 참가 →' : '다음 학년으로 →' });
     await expect(next).toBeVisible({ timeout: 60000 });

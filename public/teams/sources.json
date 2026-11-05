@@ -1,0 +1,57 @@
+{
+  "source": "https://www.koreabaseball.com/",
+  "retrieved": "2026-11-05",
+  "rights": "Club emblems belong to their respective owners. No license grant is implied.",
+  "images": [
+    {
+      "team": "lg",
+      "url": "https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/KBOHome/resources/images/emblem/regular/2022/LG.png",
+      "bytes": 1669
+    },
+    {
+      "team": "doosan",
+      "url": "https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/KBOHome/resources/images/emblem/regular/2025/OB.png",
+      "bytes": 5496
+    },
+    {
+      "team": "kt",
+      "url": "https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/KBOHome/resources/images/emblem/regular/2022/KT.png",
+      "bytes": 2368
+    },
+    {
+      "team": "ssg",
+      "url": "https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/KBOHome/resources/images/emblem/regular/2024/SK.png",
+      "bytes": 6160
+    },
+    {
+      "team": "nc",
+      "url": "https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/KBOHome/resources/images/emblem/regular/2022/NC.png",
+      "bytes": 2804
+    },
+    {
+      "team": "kia",
+      "url": "https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/KBOHome/resources/images/emblem/regular/2022/HT.png",
+      "bytes": 1438
+    },
+    {
+      "team": "lotte",
+      "url": "https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/KBOHome/resources/images/emblem/regular/2022/LT.png",
+      "bytes": 5851
+    },
+    {
+      "team": "samsung",
+      "url": "https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/KBOHome/resources/images/emblem/regular/2022/SS.png",
+      "bytes": 2752
+    },
+    {
+      "team": "hanwha",
+      "url": "https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/KBOHome/resources/images/emblem/regular/2025/HH.png",
+      "bytes": 5517
+    },
+    {
+      "team": "kiwoom",
+      "url": "https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/KBOHome/resources/images/emblem/regular/2022/WO.png",
+      "bytes": 2436
+    }
+  ]
+}

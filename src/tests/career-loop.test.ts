@@ -31,5 +31,5 @@ it('포스트시즌은 정규 기록과 분리되고 이적 후 구단별 선수
     expect(next.players.filter(p => p.teamId === team.teamId && p.role === 'PITCHER')).toHaveLength(8);
   }
   expect(retire({ ...save, player: { ...save.player, age: 35 } }).phase).toBe('RETIRED');
-  expect(retire(save)).toBe(save);
+  expect(retire(save).phase).toBe('RETIRED');
 }, 30000);

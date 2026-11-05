@@ -1,0 +1,6 @@
+import type { CareerSave } from '../engine/career';
+import { applyMilitary, military, WORLD_TEAMS } from '../engine/international';
+export default function InternationalPanel({save,busy,update}:{save:CareerSave;busy:boolean;update:(s:CareerSave)=>void}){
+  const state=military(save),status={PENDING:'병역 미해결',ATHLETE:'체육요원 편입',SANGMU:'상무 복무 예정',REGULAR:'일반 복무 예정',COMPLETED:'복무 완료'};
+  return <section className="notice"><h3>국제대회와 병역</h3><p>{status[state.status]} · 세계대회 우승 자체는 병역 혜택 조건이 아닙니다.</p>{state.status==='PENDING'&&save.phase==='SEASON_RESULT'&&save.player.age>=19&&!(save.youth&&!save.youth.graduated)&&<div className="actions"><button disabled={busy||state.appliedYears.includes(save.year)} onClick={()=>update(applyMilitary(save,true))}>상무 지원 · 선발 심사</button><button disabled={busy||state.appliedYears.includes(save.year)} onClick={()=>update(applyMilitary(save,false))}>일반 복무 선택</button></div>}{state.history.map((r,i)=><p key={i}>{r.year} · {r.text}</p>)}{save.world?.map(r=><details key={r.year} open={r.year===save.year}><summary>{r.year} 세계 야구 대회 · {r.selected?'대표팀 선발':'미선발'} · 대한민국 {r.rank}위</summary>{r.games.map(g=><p key={g.id}>{g.stage} · {WORLD_TEAMS.find(t=>t.id===g.awayTeamId)?.name} {g.away} : {g.home} {WORLD_TEAMS.find(t=>t.id===g.homeTeamId)?.name}</p>)}</details>)}</section>;
+}

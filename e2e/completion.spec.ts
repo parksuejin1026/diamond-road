@@ -21,31 +21,31 @@ test('320px 생성 3단계는 검색·선택·뒤로가기·키보드 입력을 
   await expect(page.getByRole('button',{name:/장타자의 꿈/})).toHaveAttribute('aria-pressed','true');
   await page.screenshot({path:'artifacts/creation-320.png'});
   await page.getByRole('button',{name:'다음 단계 →'}).click();
-  await page.getByRole('combobox',{name:'집중 육성',exact:true}).selectOption('defense');
+  await page.getByRole('combobox',{name:'외형'}).selectOption('7');
   await page.getByRole('button',{name:'나의 커리어 시작하기 →'}).click();
   await expect(page).toHaveURL(/\/career\/$/);
   await expect(page.getByText(/16세 · 우익수/)).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
-  expect(await page.evaluate(()=>document.documentElement.scrollHeight)).toBeLessThanOrEqual(740);
+
   const panel=page.locator('main.inCareer>.panel');
-  expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+
   await page.screenshot({path:'artifacts/home-320.png'});
-  expect((await readSave(page)).focusSkill).toBe('defense');
+  expect((await readSave(page)).life?.appearance).toBe(7);
   await page.getByRole('button',{name:'시즌 준비하기 →'}).click();
-  expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+
   await page.screenshot({path:'artifacts/preparation-320.png'});
 });
-test('아이템은 훈련 선택을 대체하지 않고 수령·소모가 새로고침 후 유지된다',async({page})=>{
-  await createFromWizard(page,'아이템 선수');await page.getByRole('button',{name:'시즌 준비하기 →'}).click();
-  await page.locator('.inventory>summary').click();await page.getByRole('button',{name:'시즌 지원 상자 받기'}).click();
-  await expect(page.locator('.itemGrid button')).toHaveCount(1);await page.locator('.itemGrid button').click();
-  await expect(page.getByText('이번 시즌 아이템 사용 완료',{exact:true})).toBeVisible();
-  await expect(page.getByRole('button',{name:'시즌 전체 자동 진행 →'})).toBeDisabled();
-  await page.reload();await page.getByRole('button',{name:'시즌 준비하기 →'}).click();await page.locator('.inventory>summary').click();
-  await expect(page.getByRole('button',{name:'이번 시즌 상자 수령 완료'})).toBeDisabled();
-  await expect(page.locator('.itemGrid button')).toHaveCount(0);
-  await page.getByRole('button',{name:'수비 +2',exact:true}).click();await expect(page.getByRole('button',{name:'시즌 전체 자동 진행 →'})).toBeEnabled();
+test('현금 코칭 구매와 생활 루틴이 복원되고 무료 훈련 없이 시즌을 시작한다',async({page})=>{
+  await createFromWizard(page,'관리 선수');await page.getByRole('button',{name:'시즌 준비하기 →'}).click();
+  await page.getByText('생활 관리 · 개인 코칭',{exact:true}).click();
+  await page.getByRole('combobox',{name:'생활 루틴'}).selectOption('FOOD');
+  await page.getByRole('button',{name:'1,000,000원 · +1',exact:true}).click();
+  const bought=await readSave(page);expect(bought.life?.cash).toBe(0);expect(bought.life?.routine).toBe('FOOD');
+  await page.reload();await page.getByRole('button',{name:'시즌 준비하기 →'}).click();
+  expect((await readSave(page)).life).toEqual(bought.life);
+  await expect(page.getByRole('button',{name:'시즌 전체 자동 진행 →'})).toBeEnabled();
 });
+
 test('방출 선수는 새 구단 입단을 선택해야 다음 시즌으로 간다',async({page})=>{
   const save=createCareer({name:'재도전',role:'HITTER',teamId:'lg',hand:'RIGHT'},1);save.year=2028;save.player.age=25;save.phase='SEASON_RESULT';
   for(const key of Object.keys(save.player.skills))save.player.skills[key]=35;

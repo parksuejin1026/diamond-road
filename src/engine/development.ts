@@ -1,3 +1,4 @@
+import { prepareLife, life } from './life';
 import type { CareerSave } from './career';
 import type { Skills } from '../domain/types';
 import { overall } from '../domain/calculators';
@@ -8,6 +9,7 @@ export function focusSkill(save: CareerSave) {
   return preferred && preferred in save.player.skills ? preferred : save.player.role === 'HITTER' ? 'contact' : 'control';
 }
 export function selectFocus(save: CareerSave, skill: string): CareerSave {
+  if (save.life) return save;
   if (save.phase !== 'PRESEASON' || !(skill in save.player.skills)) return save;
   return { ...save, focusSkill: skill, youth: save.youth ? { ...save.youth, focus: skill } : save.youth };
 }
@@ -17,11 +19,13 @@ export function developPlayer(save: CareerSave, rng: Rng) {
   const beforeSkills = { ...save.player.skills }; const beforeOvr = overall(save.player);
   const focus = focusSkill(save); const age = save.player.age;
   const room = Math.max(0, save.player.potential - beforeOvr);
+  prepareLife(save);
+  const growth = life(save).growth!;
   for (const key of Object.keys(beforeSkills)) {
-    const random = age < 25 ? rng.int(0, 3) : age < 30 ? rng.int(0, 2) : age < 33 ? rng.int(-1, 1) : rng.int(-3, 0);
-    const gain = random + (key === focus ? 1 : 0);
-    const change = gain > 0 ? Math.min(gain, room) : gain;
-    save.player.skills[key] = Math.max(1, Math.min(99, beforeSkills[key] + change));
+    const index=growth.skills.indexOf(key);
+    const gain=index<0?0:growth.gains[index];
+    const decline=age>=33?rng.int(0,2):0;
+    save.player.skills[key]=Math.max(1,Math.min(99,beforeSkills[key]+Math.min(gain,room)-decline));
   }
   save.players = save.players.map(p => p.id === save.player.id ? save.player : p);
   save.development = { year: save.year, focus, beforeSkills, afterSkills: { ...save.player.skills }, beforeOvr, afterOvr: overall(save.player) };

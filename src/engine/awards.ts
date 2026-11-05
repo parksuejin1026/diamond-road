@@ -24,6 +24,14 @@ export function calculateAwards(league: LeagueSeason, players: Player[]): Award[
     const workload = p && p.gs === 0 && p.outs > 270 ? 270 / p.outs : 1;
     return (h ? h.h * w.hitterHits + (h.h + h.doubles + h.triples * 2 + h.hr * 3) * w.hitterBases + h.bb * w.hitterWalk + h.rbi * w.hitterRbi + h.runs * w.hitterRuns + h.ab * w.hitterAb + h.so * w.hitterSo : (p.outs * w.pitcherOuts + p.so * w.pitcherSo + p.er * w.pitcherEr + p.wins * w.pitcherWins) * workload) + teamWins * w.teamWins;
   });
+  const occupied=new Set<string>();
+  for(const position of ['P','C','1B','2B','3B','SS','OF','OF','OF','DH']){
+    const candidates=players.filter(p=>!occupied.has(p.id)&&(position==='P'?p.role==='PITCHER':p.role==='HITTER'&&(position==='OF'?['LF','CF','RF'].includes(p.position??''):(p.position??'DH')===position)));
+    const qualified=candidates.filter(p=>position==='P'?(league.pitchers[p.id]?.outs??0)>=150:(league.hitters[p.id]?.pa??0)>=200);
+    const score=(id:string)=>{const h=league.hitters[id],p=league.pitchers[id];return position==='P'?p.outs+p.so*2-p.er*3:h.h+h.hr*4+h.bb*.5+h.rbi*.4;};
+    qualified.sort((a,b)=>score(b.id)-score(a.id)||a.id.localeCompare(b.id));
+    if(qualified[0]){occupied.add(qualified[0].id);awards.push({title:`골든글러브 ${position}${position==='OF'?` ${awards.filter(a=>a.title.startsWith('골든글러브 OF')).length+1}`:''}`,playerId:qualified[0].id});}
+  }
   return awards;
 }
 export function legacyGrade(seasons: SeasonSnapshot[]) {

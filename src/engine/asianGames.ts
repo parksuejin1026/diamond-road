@@ -61,7 +61,8 @@ export function simulateAsianGames(save: CareerSave): AsianGamesReport | null {
   }
   const player = players.find(player => player.id === save.player.id) ?? players[0];
   player.rosterStatus = 'STARTER'; player.injuredUntil = 0;
-  const cup: CareerSave = { ...save, youth: null, player, players, league: emptyLeague(players), pendingGame: null };
+  const cup: CareerSave = { ...save, life: save.life ? structuredClone(save.life) : undefined, moments: [], youth: null, player, players, league: emptyLeague(players), pendingGame: null };
+  if(!selected&&cup.life)cup.life.mentality=100;
   let counter = 0;
   const play = (a: string, b: string, stage: string) => {
     const game = simulateInternationalFixture(cup, { id: `ag-${save.year}-${++counter}`, round: counter, homeTeamId: a, awayTeamId: b }, rng);
