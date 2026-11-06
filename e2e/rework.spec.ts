@@ -13,7 +13,7 @@ test('실제 저장된 끝내기 연출은 기록 재적용 없이 재생하고 
  const save=createCareer({name:'가을의 주인공',role:'HITTER',teamId:'lg',hand:'RIGHT',appearance:9},9);save.phase='SEASON_RESULT';
  save.moments=[{id:'fixture-walkoff',year:2026,kind:'HOME_RUN',name:save.player.name,inning:9,outs:2,bases:3,before:'6 : 3',after:'6 : 7',walkoff:true,grandSlam:true,stage:'한국시리즈'}];
  await installSave(page,save,true);const before=await readSave(page);
- await page.getByRole('button',{name:'명장면 다시 재생'}).click();await expect(page.locator('.momentImpact')).toHaveText('WALK OFF!');
+ await page.getByRole('button',{name:'명장면 다시 재생'}).click();await expect(page.locator('.replayResult')).toContainText('끝내기 만루 홈런');
  await page.waitForTimeout(1700);await page.screenshot({path:'artifacts/walkoff-detail.png'});expect((await readSave(page)).league).toEqual(before.league);
- await page.emulateMedia({reducedMotion:'reduce'});await expect(page.locator('.momentImpact')).toBeVisible();
+ await page.emulateMedia({reducedMotion:'reduce'});await expect(page.getByRole('button',{name:'명장면 재생',exact:true})).toBeVisible();const frame=await page.locator('.replayCanvas').getAttribute('data-replay-time');await page.waitForTimeout(400);expect(await page.locator('.replayCanvas').getAttribute('data-replay-time')).toBe(frame);
 });

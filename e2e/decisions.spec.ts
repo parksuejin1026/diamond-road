@@ -27,9 +27,13 @@ test('세계대회는 자동 실행하지 않고 참가 보류와 결과 확인�
 });
 for(const kind of ['HOME_RUN','STRIKEOUT','CATCH','CHAMPION'] as const)test(`${kind} 본인 명장면 한 장면이 전용 화면에서 실제 자세를 바꾼다`,async({page})=>{
  const save=make();save.phase='SEASON_RESULT';save.moments=[{id:'other',actorId:'npc',year:2026,kind:'HOME_RUN',name:'다른 선수',inning:9,outs:2,bases:0,before:'1 : 1',after:'1 : 2',walkoff:true,grandSlam:true,stage:'한국시리즈'},{id:'own',actorId:'user',year:2026,kind,name:save.player.name,inning:8,outs:1,bases:1,before:'0 : 0',after:'1 : 0',walkoff:false,grandSlam:false,stage:'한국시리즈'}];
- await install(page,save);await expect(page.locator('.momentScene')).toHaveCount(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(1280);await expect(page.getByText('다른 선수')).toHaveCount(0);await expect(page.locator('.bottomTabs')).toHaveCount(0);
- const target=page.locator(kind==='CHAMPION'?'.momentActor .spriteFigure':'.momentActor .spriteArms');
- const before=await target.evaluate(el=>getComputedStyle(el).transform);await page.waitForTimeout(1500);const after=await target.evaluate(el=>getComputedStyle(el).transform);expect(before).not.toBe(after);
+ await install(page,save);await expect(page.locator('.replayStage')).toHaveCount(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(1280);await expect(page.getByText('다른 선수')).toHaveCount(0);await expect(page.locator('.bottomTabs')).toHaveCount(0);
+ const target=page.locator('.replayCanvas');await expect(page.locator('.replayStage')).toHaveAttribute('data-status','ready');
+ await expect(target).toHaveAttribute('data-hero-frame',/\d/);const before=await target.getAttribute('data-hero-frame');
+ const pixelsBefore=await target.evaluate((el:HTMLCanvasElement)=>Array.from(el.getContext('2d')!.getImageData(80,150,500,500).data).filter((_,i)=>i%128===0).reduce((a,b)=>a+b,0));
+ await page.waitForTimeout(1500);const after=await target.getAttribute('data-hero-frame');expect(before).not.toBe(after);
+ const pixelsAfter=await target.evaluate((el:HTMLCanvasElement)=>Array.from(el.getContext('2d')!.getImageData(80,150,500,500).data).filter((_,i)=>i%128===0).reduce((a,b)=>a+b,0));expect(pixelsBefore).not.toBe(pixelsAfter);
+ await expect(page.locator('.spriteArms,.spriteBat')).toHaveCount(0);
  await page.screenshot({path:`artifacts/moment-${kind.toLowerCase()}.png`});await page.getByRole('button',{name:'명장면 확인 · 다음으로 →'}).click();await expect(page.locator('.bottomTabs')).toBeVisible();
 });
 test('고교 졸업에서 대학을 고르고 새로고침해도 대학 1학년 커리어를 유지한다',async({page})=>{
