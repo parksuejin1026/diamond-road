@@ -1,5 +1,6 @@
+import { pendingDecision } from './decisions';
 import { youthCupAwards } from './youthAwards';
-import { simulateWorld, updateMilitary, military } from './international';
+import { military } from './international';
 import { life, prepareLife, effectiveSkills, conditionRound, credit } from './life';
 import { recordMoment } from './moments';
 import type { GameState, HitterStats, PAResult, PitcherStats, Player, ScheduleGame } from '../domain/types';
@@ -10,13 +11,12 @@ import { sampleAutoPA } from './atBat';
 import { Rng } from './rng';
 import { TEAMS, createSchedule } from './schedule';
 import { restoreAvailability } from './availability';
-import { createOffers, recordContractRound, finishContractYear, signContract, contractService, settleContractYear, proposeTrade } from './contracts';
+import { createOffers, recordContractRound, finishContractYear, contractService, settleContractYear, proposeTrade } from './contracts';
 import { calculateAwards } from './awards';
 import { isYouth, finishSchoolYear, nextSchoolYear, seasonRounds, type SchoolCup } from './youth';
 import { createRoster } from './roster';
 import { developPlayer } from './development';
 import { FIELD_POSITIONS, pitchingAssignment, applyFielding } from './positions';
-import { simulateAsianGames } from './asianGames';
 import { awardCareerGoal } from './achievements';
 export interface Standing { teamId: string; w: number; l: number; t: number; }
 export interface GameResult { id: string; round: number; homeTeamId: string; awayTeamId: string; home: number; away: number; innings: number; stage?: string; }
@@ -169,7 +169,7 @@ export function advanceRound(original: CareerSave, options: { interactive?: bool
   if(original.phase==='POSTSEASON')return playPostseason(original);
   const rounds = seasonRounds(original);
   if (!['PRESEASON', 'SIMULATING'].includes(original.phase) || original.league.round >= rounds) return original;
-  if (original.pendingEvent) return advanceRound({ ...original, pendingEvent: null }, options);
+  if (original.pendingEvent) return original;
   const save = restoreAvailability(structuredClone(original)); prepareLife(save); const rng = new Rng(save.rngState); save.phase = 'SIMULATING';
   const players = Object.fromEntries(save.players.map(p => [p.id, p]));
   const round = save.league.round + 1;
@@ -263,14 +263,8 @@ export function nextSeason(save: CareerSave): CareerSave {
   if (isYouth(save)) return nextSchoolYear(save);
   if (save.player.age >= 38) return { ...save, phase: 'RETIRED' };
   if (save.pendingTrade) throw new Error('트레이드 제안에 답한 뒤 다음 시즌으로 진행해 주세요.');
-  if (save.contractOffers.length) {
-    const staying = save.contractOffers.findIndex(offer => offer.teamId === save.player.teamId && offer.kind === 'RENEWAL');
-    const fallback = staying >= 0 ? staying : save.contractOffers.findIndex(offer => offer.teamId === save.player.teamId);
-    if (fallback < 0) throw new Error('다음 시즌 계약을 먼저 선택해 주세요.');
-    const signed = signContract(save, fallback);
-    if (signed === save) throw new Error('계약 자격을 확인한 후 제안을 선택해 주세요.');
-    save = signed;
-  }
+  if (save.contractOffers.length) throw new Error('다음 시즌 계약을 먼저 선택해 주세요.');
+  if (pendingDecision(save)) throw new Error('이벤트 화면에서 선택을 마친 뒤 진행해 주세요.');
   if(['SANGMU','REGULAR'].includes(military(save).status))save=completeMilitary(save);
   const rng = new Rng(save.rngState); const player = structuredClone(save.player);
   // Old result saves have not received season-end growth; preserve their one-time transition.
@@ -306,7 +300,7 @@ export function retire(original: CareerSave): CareerSave {
 function simulateSchoolCups(save: CareerSave, rng: Rng): SchoolCup[] {
   const players = Object.fromEntries(save.players.map(p => [p.id, p]));
   const cups: SchoolCup[] = [];
-  for (const name of ['이마트배', '황금사자기', '청룡기', '봉황대기']) {
+  for (const name of (save.youth?.level==='UNIVERSITY' ? ['대학야구 선수권', '대학야구 왕중왕전'] : ['이마트배', '황금사자기', '청룡기', '봉황대기'])) {
     const post = { ...save, league: emptyLeague(save.players), pendingGame: null } as CareerSave;
     let entrants = save.league.standings.map(t => t.teamId);
     for (let i = entrants.length - 1; i > 0; i--) { const j = rng.int(0, i); [entrants[i], entrants[j]] = [entrants[j], entrants[i]]; }
@@ -365,10 +359,10 @@ export function playPostseason(original:CareerSave):CareerSave {
     if(save.postseason.champion===save.player.teamId){
       save.moments??=[];
       const last=save.postseason.games.at(-1)!;
-      save.moments.push({id:`champion-${save.year}`,year:save.year,kind:'CHAMPION',name:save.player.name,inning:last.innings,outs:3,bases:0,before:`${last.away} : ${last.home}`,after:`${last.away} : ${last.home}`,walkoff:false,grandSlam:false,stage:'한국시리즈 우승'});
+      save.moments.push({id:`champion-${save.year}`,year:save.year,actorId:save.player.id,kind:'CHAMPION',name:save.player.name,inning:last.innings,outs:3,bases:0,before:`${last.away} : ${last.home}`,after:`${last.away} : ${last.home}`,walkoff:false,grandSlam:false,stage:'한국시리즈 우승'});
       credit(save,`champion-prize-${save.year}`,10000000,'한국시리즈 우승 상금');
     }
-    simulateAsianGames(save); simulateWorld(save); updateMilitary(save);
+
     developPlayer(save, rng);
     finishContractYear(save);
     settleContractYear(save);

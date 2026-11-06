@@ -1,3 +1,4 @@
+import universities from '../data/universities.json' with { type: 'json' };
 import data from '../data/schools.json' with { type: 'json' };
 import type { ScheduleGame } from '../domain/types';
 import { Rng } from './rng';
@@ -22,4 +23,21 @@ export function createSchoolSchedule(seed: number): ScheduleGame[] {
     }
     return games;
   }).sort((a, b) => a.round - b.round || a.id.localeCompare(b.id));
+}
+
+export const UNIVERSITIES = universities.teams;
+// Four-year university route; competition groups and admissions are simplified for the game.
+export function createUniversitySchedule(seed: number): ScheduleGame[] {
+  const rng = new Rng(seed), ids: (string | null)[] = UNIVERSITIES.map(t => t.id);
+  for (let i=ids.length-1;i>0;i--) { const j=rng.int(0,i); [ids[i],ids[j]]=[ids[j],ids[i]]; }
+  if(ids.length%2)ids.push(null);
+  const games: ScheduleGame[]=[];
+  for(let r=0;r<14;r++) {
+    for(let i=0;i<ids.length/2;i++) {
+      const a=ids[i],b=ids[ids.length-1-i];
+      if(a&&b)games.push({id:`university-${r}-${i}`,round:r+1,homeTeamId:r%2?a:b,awayTeamId:r%2?b:a});
+    }
+    ids.splice(1,0,ids.pop()!);
+  }
+  return games;
 }

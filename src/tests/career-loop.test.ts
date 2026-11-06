@@ -1,3 +1,4 @@
+import {resolveDecisions} from './resolve-decisions';
 import { expect, it } from 'vitest';
 import { createCareer } from '../engine/career';
 import { advanceRound, nextSeason, retire } from '../engine/season';
@@ -23,7 +24,7 @@ it('포스트시즌은 정규 기록과 분리되고 이적 후 구단별 선수
   const moved = signContract(save, 1);
   expect(moved.player.teamId).not.toBe(save.player.teamId);
   expect(moved.contractHistory).toHaveLength(2);
-  const next = nextSeason(moved);
+  const next = nextSeason(resolveDecisions(moved));
   expect(next.player.salaryCR).toBe(moved.player.salaryCR);
   expect(next.player.contractYearsLeft).toBe(3);
   for (const team of next.league.standings) {

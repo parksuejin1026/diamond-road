@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { createCareer } from '../src/engine/career';
 import { createOffers } from '../src/engine/contracts';
 import { Rng } from '../src/engine/rng';
-import { createFromWizard, installSave, readSave } from './helpers';
+import { createFromWizard, installSave, readSave, dismissDecisions, enterSeason } from './helpers';
 test('320px 생성 3단계는 검색·선택·뒤로가기·키보드 입력을 유지한다',async({page})=>{
   await page.setViewportSize({width:320,height:740}); await page.goto('./');
   await page.getByRole('button',{name:'다음 단계 →'}).click();
@@ -24,6 +24,7 @@ test('320px 생성 3단계는 검색·선택·뒤로가기·키보드 입력을 
   await page.getByRole('button',{name:/^외형 4 선택/}).click();
   await page.getByRole('button',{name:'나의 커리어 시작하기 →'}).click();
   await expect(page).toHaveURL(/\/career\/$/);
+  await dismissDecisions(page);
   await expect(page.getByText(/16세 · 우익수/)).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 
@@ -50,9 +51,8 @@ test('방출 선수는 새 구단 입단을 선택해야 다음 시즌으로 간
   for(const key of Object.keys(save.player.skills))save.player.skills[key]=35;
   save.seasons=[{year:2027,age:24,teamId:'lg',hitter:{...save.league.hitters.user},pitcher:null,rank:10,ovr:35}];
   save.contractOffers=createOffers(save,new Rng(1));await installSave(page,save);
-  await expect(page.getByRole('button',{name:'성장 반영 · 다음 시즌 →'})).toBeDisabled();
-  await page.getByRole('button',{name:/진로/ ,exact:false}).click();
-  await expect(page.getByRole('heading',{name:'방출 · 새로운 소속을 찾아서'})).toBeVisible();await page.locator('.offer').first().click();
+  await expect(page.getByRole('button',{name:'성장 반영 · 다음 시즌 →'})).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'방출 · 새로운 소속을 찾아서'})).toBeVisible();await page.locator('.offer').first().click();await enterSeason(page);
   await page.getByRole('button',{name:'성장 반영 · 다음 시즌 →'}).click();expect((await readSave(page)).player.teamId).not.toBe('lg');
 });
 test('은퇴 저장의 MVP 12회 보상을 복구하고 회고 화면에서 이력을 본다',async({page})=>{
@@ -66,8 +66,8 @@ test('은퇴 저장의 MVP 12회 보상을 복구하고 회고 화면에서 이�
 test('트레이드 선택은 진로 화면에서 처리하고 계약 조건을 유지한다',async({page})=>{
   const save=createCareer({name:'새 유니폼',role:'PITCHER',teamId:'lg',hand:'RIGHT'},1);save.phase='SEASON_RESULT';save.player.contractYearsLeft=3;
   save.pendingTrade={teamId:'doosan',year:2027,years:2,salaryCR:save.player.salaryCR,opportunity:'STARTER',kind:'TRADE'};
-  await installSave(page,save);await expect(page.getByRole('button',{name:'성장 반영 · 다음 시즌 →'})).toBeDisabled();
-  await page.getByRole('button',{name:/^진로/}).click();await page.getByRole('button',{name:'트레이드 수락',exact:true}).click();
+  await installSave(page,save);await expect(page.getByRole('button',{name:'성장 반영 · 다음 시즌 →'})).toHaveCount(0);
+  await page.getByRole('button',{name:'트레이드 수락',exact:true}).click();await enterSeason(page);
   await page.getByRole('button',{name:'성장 반영 · 다음 시즌 →'}).click();
   const next=await readSave(page);expect(next.player.teamId).toBe('doosan');expect(next.player.salaryCR).toBe(save.player.salaryCR);expect(next.player.contractYearsLeft).toBe(2);
 });

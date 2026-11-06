@@ -1,3 +1,4 @@
+import {resolveDecisions} from './resolve-decisions';
 import { expect, it } from 'vitest';
 import { createCareer } from '../engine/career';
 import { advanceRound, nextSeason } from '../engine/season';
@@ -31,7 +32,7 @@ it('5시즌을 연속 진행해 통산 이력을 중복시키지 않는다', () 
   let save = create();
   for (let i = 0; i < 5; i++) {
     save = finish(save); expect(save.seasons).toHaveLength(i + 1);
-    const next = nextSeason(save);
+    const next = nextSeason(resolveDecisions(save));
     expect(next.player.age).toBe(19 + i); expect(next.league.round).toBe(0);
     expect(next.league.results).toHaveLength(0); expect(next.trained).toBe(false);
     expect(nextSeason(next)).toBe(next);

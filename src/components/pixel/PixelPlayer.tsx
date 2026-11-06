@@ -1,5 +1,16 @@
+import type { CSSProperties } from 'react';
 import type { Role } from '../../domain/types';
-import {appearancePath} from '../../data/appearances';
-export default function PixelPlayer({role='HITTER',number=18,className='',variant=0}:{role?:Role;accent?:string;number?:number;className?:string;variant?:number}){
- return <img className={'pixelPlayer playerArtwork '+className} src={appearancePath(variant)} width="256" height="384" alt={role==='HITTER'?'타자 캐릭터':'투수 캐릭터'} title={String(number)} decoding="async"/>;
+export default function PixelPlayer({role='HITTER',number=18,className='',variant=0,accent='#253d65',motion='idle'}:{role?:Role;accent?:string;number?:number;className?:string;variant?:number;motion?:'idle'|'bat'|'pitch'|'run'|'catch'|'celebrate'}){
+ const v=((variant%6)+6)%6,skin=['#eab78e','#f0c3a0','#c98a61','#dfaa7e','#9d6247','#efd0af'][v],hair=['#202535','#382b2b','#202332','#794332','#26202b','#172331'][v];
+ return <svg className={`pixelPlayer playerArtwork motion-${motion} ${className}`} viewBox="0 0 96 104" role="img" aria-label={role==='HITTER'?'타자 캐릭터':'투수 캐릭터'} style={{'--kit':accent,'--skin':skin} as CSSProperties} shapeRendering="crispEdges">
+ <ellipse className="spriteShadow" cx="48" cy="96" rx="25" ry="5" fill="#040d20" opacity=".4"/>
+ <g className="spriteFigure" stroke="#152139" strokeWidth="2" strokeLinejoin="round">
+ <g className="spriteLeg spriteLegBack"><path d="M48 66H62L66 86H53Z" fill="#bcc9d5"/><path d="M53 82H66V94H52Z" fill="var(--kit)"/><path d="M52 91H67L73 96H51Z" fill="#19273f"/><path d="M53 94H71" stroke="#e1c183"/></g>
+ <g className="spriteLeg spriteLegFront"><path d="M34 66H49L44 86H31Z" fill="#e9eff0"/><path d="M31 82H44V94H30Z" fill="var(--kit)"/><path d="M30 91H44L48 96H26V94Z" fill="#19273f"/><path d="M27 94H46" stroke="#e1c183"/></g>
+ <g className="spriteTorso"><path d="M32 39L42 36H54L65 41L62 69H34Z" fill="#edf0e7"/><path d="M56 40L64 43L61 68H54Z" fill="#bbc9d4" stroke="none"/><path d="M43 38L48 44L54 38M48 44V66" fill="none" stroke="var(--kit)"/><path d="M33 64H63V69H33Z" fill="var(--kit)"/><path d="M45 65H51V69H45Z" fill="#e7b75f" strokeWidth="1"/><path d="M36 46H42V49H36Z" fill="var(--kit)" stroke="none"/><text x="53" y="59" fontSize="9" stroke="none" fill="var(--kit)" fontWeight="bold">{number}</text>
+ <g className="spriteArmBack"><path d="M61 40L70 44L70 55L62 58L58 50Z" fill="var(--kit)"/><path d="M64 51L72 53L69 65L61 63Z" fill={skin}/><path d="M61 61H70V68H60Z" fill="#855236"/></g>
+ <g className="spriteHead"><path d="M30 15H63V30L58 37H38L31 31Z" fill={skin}/><path d="M29 19H34V28H29ZM63 20H67V28H63Z" fill={skin}/><path d="M32 15H63V21H58V17H52V20H45V17H36V24H32Z" fill={hair} stroke="none"/><path d="M30 9L37 4H56L63 10V16H30Z" fill="var(--kit)"/><path d="M30 14H65L72 18H47V15H30Z" fill="#304f77"/><path d="M39 7H47V11H39Z" fill="#e9be68" stroke="none"/>{v===3&&<path d="M29 17L26 26L31 34L36 27V20Z" fill={hair}/>}{v===5&&<path d="M63 16H70V32H64Z" fill={hair}/>}
+ <path d="M38 24H44M52 24H58" stroke={hair}/><path d="M40 25V28M54 25V28" stroke="#122135" strokeWidth="3"/><path d="M45 32H53" stroke="#995c4d"/>{v===2&&<path d="M39 32L44 35H53L57 32" fill="#fff3da" strokeWidth="1"/>}</g>
+ <g className="spriteArms spriteArmFront"><path d="M33 40L25 43L23 54L32 57L38 47Z" fill="var(--kit)"/><path d="M24 51L32 53L35 62L28 66L22 59Z" fill={skin}/>{role==='PITCHER'||motion==='catch'?<g className="spriteGlove"><path d="M27 54L21 50L17 53L17 64L25 70L35 66L37 58L32 54Z" fill="#a86e3c"/><path d="M22 54V62L29 66M27 54L29 62M33 57L32 63" fill="none" stroke="#6b432d" strokeWidth="1"/></g>:<><path d="M28 58H36V66H28Z" fill="#97603c"/><g className="spriteBat"><path d="M32 62L15 27L12 17L16 14L21 21L35 61Z" fill="#c8914f"/><path d="M14 19L18 21L33 58" stroke="#e8bd75" strokeWidth="2"/></g></>}</g>
+ </g></g></svg>;
 }

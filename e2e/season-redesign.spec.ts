@@ -1,3 +1,4 @@
+import {dismissDecisions,enterSeason} from './helpers';
 import { expect, test } from '@playwright/test';
 import { createCareer } from '../src/engine/career';
 import { advanceRound } from '../src/engine/season';
@@ -10,6 +11,7 @@ test('생성 직후 진행은 커리어 페이지 이동이 끝난 뒤 시작한
   await page.getByRole('button', { name: '다음 단계 →' }).click();
   await page.getByRole('button', { name: '다음 단계 →' }).click();
   await page.getByRole('button', { name: '나의 커리어 시작하기 →' }).click();
+  await expect(page).toHaveURL(/\/career\/$/);await dismissDecisions(page);
   await page.getByRole('button', { name: '시즌 준비하기 →' }).click();
   await expect(page.getByRole('button', { name: '시즌 전체 자동 진행 →' })).toBeEnabled();
   await page.getByRole('button', { name: '시즌 전체 자동 진행 →' }).click();
@@ -24,6 +26,7 @@ test('투수를 생성하면 구원 보직에서 시작한다', async ({ page })
   await page.getByRole('button', { name: '다음 단계 →' }).click();
   await expect(page.getByRole('combobox', { name: '수비 포지션' })).toHaveCount(0);
   await page.getByRole('button', { name: '나의 커리어 시작하기 →' }).click();
+  await expect(page).toHaveURL(/\/career\/$/);await dismissDecisions(page);
   await expect(page.getByText(/16세 · 구원투수/)).toBeVisible();
   await expect(page).toHaveURL(/\/career\/$/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
@@ -37,6 +40,7 @@ test('홈 탭과 시즌 전체 자동 진행, 저장 복원', async ({ page }) =
   await page.getByRole('combobox', { name: '수비 포지션' }).selectOption('RF');
   await page.getByRole('button', { name: '다음 단계 →' }).click();
   await page.getByRole('button', { name: '나의 커리어 시작하기 →' }).click();
+  await expect(page).toHaveURL(/\/career\/$/);await dismissDecisions(page);
   await expect(page.getByRole('heading', { name: '새로운 시즌' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: '커리어 메뉴' })).toBeVisible();
   await expect(page.getByText(/16세 · 우익수/)).toBeVisible();
@@ -74,6 +78,8 @@ for (const role of ['HITTER', 'PITCHER'] as const) test(`이전 ${role} 수동 �
   await page.reload(); await page.getByRole('button', { name: '시즌 준비하기 →' }).click();
   await page.getByRole('button', { name: '시즌 전체 자동 진행 →' }).click();
   await page.getByRole('button',{name:'포스트시즌 진행 · 명장면 보기 →'}).click();
+  await dismissDecisions(page,true);
+  await enterSeason(page);
   await expect(page.getByRole('button', { name: '성장 반영 · 다음 시즌 →' })).toBeVisible({ timeout: 60000 });
   await expect(page.getByRole('button', { name: '직접 플레이', exact: true })).toHaveCount(0);
 });

@@ -1,3 +1,4 @@
+import {resolveDecisions} from '../src/tests/resolve-decisions';
 import {buyShopItem,shopState,SHOP_ITEMS} from '../src/engine/shop';
 import { expect,it } from 'vitest';
 import { mkdirSync,writeFileSync } from 'node:fs';
@@ -17,7 +18,7 @@ it('현금과 자동 육성의 정상 경로로 MVP 목표에 도전하고 수�
     else if(save.phase==='SEASON_RESULT'){
       if(save.pendingTrade)save=resolveTrade(save,false);
       if(save.contractOffers.length)save=signContract(save,0);
-      save=nextSeason(save);
+      save=nextSeason(resolveDecisions(save));
     }else{
       if(save.phase==='PRESEASON'){
         const offered=shopState(save).stock.map(id=>SHOP_ITEMS.find(i=>i.id===id)!).sort((a,b)=>b.price-a.price);

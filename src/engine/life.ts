@@ -34,7 +34,9 @@ export function prepareLife(save:CareerSave) {
   const rng=new Rng((save.seed ^ save.year*7919)>>>0);
   const profile=PLAYER_STYLES[save.player.role][state.style] ?? PLAYER_STYLES[save.player.role][0];
   const candidates=Object.keys(save.player.skills).filter(k=>save.player.skills[k]<99);
+  const preferred=save.focusSkill ?? save.youth?.focus;
   const skills:string[]=[];
+  if(preferred&&candidates.includes(preferred)){skills.push(preferred);candidates.splice(candidates.indexOf(preferred),1);}
   while(skills.length<2&&candidates.length){
     const weights=candidates.map(k=>Math.max(1,profile.skills[k]-32));
     let roll=rng.next()*weights.reduce((a,b)=>a+b,0); let index=0;
@@ -87,7 +89,7 @@ export function requestSalary(save:CareerSave):CareerSave {
   if(accepted){
     const salary=Math.ceil(save.player.salaryCR*(strong?1.15:1.05)/100)*100;
     if(next.contractOffers.length)next.contractOffers=next.contractOffers.map(o=>o.teamId===next.player.teamId?{...o,salaryCR:Math.max(o.salaryCR,salary)}:o);
-    else {next.player.salaryCR=salary; const active=next.contractHistory.findLast(c=>c.year+c.years>save.year);if(active)active.salaryCR=salary;}
+    else next.contractOffers=[{teamId:next.player.teamId,salaryCR:salary,years:Math.max(1,(next.player.contractYearsLeft??1)-1),year:next.year+1,opportunity:next.player.rosterStatus==='STARTER'?'STARTER':'BENCH',kind:'EXTENSION',signingBonusCR:0}];
   }
   state.news.push({year:save.year,text:accepted?'구단이 다음 시즌 연봉 인상 요구를 받아들였습니다.':'구단이 성적과 예산을 이유로 연봉 인상 요구를 거절했습니다.'});
   state.mentality=Math.max(20,Math.min(100,state.mentality+(accepted?3:-3)));

@@ -9,9 +9,11 @@ export function focusSkill(save: CareerSave) {
   return preferred && preferred in save.player.skills ? preferred : save.player.role === 'HITTER' ? 'contact' : 'control';
 }
 export function selectFocus(save: CareerSave, skill: string): CareerSave {
-  if (save.life) return save;
+
   if (save.phase !== 'PRESEASON' || !(skill in save.player.skills)) return save;
-  return { ...save, focusSkill: skill, youth: save.youth ? { ...save.youth, focus: skill } : save.youth };
+  if(save.league.round>0 || save.focusRerollYear===save.year)return save;
+  const next=structuredClone(save);next.focusSkill=skill;if(next.youth)next.youth.focus=skill;
+  const meeting=next.life?.meeting;life(next).growth=undefined;prepareLife(next);if(meeting)life(next).meeting=meeting;return next;
 }
 // Called once at the season boundary. Uses the saved RNG so reloads cannot reroll growth.
 export function developPlayer(save: CareerSave, rng: Rng) {
@@ -29,4 +31,12 @@ export function developPlayer(save: CareerSave, rng: Rng) {
   }
   save.players = save.players.map(p => p.id === save.player.id ? save.player : p);
   save.development = { year: save.year, focus, beforeSkills, afterSkills: { ...save.player.skills }, beforeOvr, afterOvr: overall(save.player) };
+}
+
+export function rerollFocus(original: CareerSave): CareerSave {
+  if(original.phase!=='PRESEASON'||original.league.round>0||original.focusRerollYear===original.year)return original;
+  const candidates=Object.keys(original.player.skills).filter(k=>k!==focusSkill(original)&&original.player.skills[k]<99);
+  if(!candidates.length)return original;
+  const rng=new Rng(original.rngState),next=selectFocus(original,candidates[rng.int(0,candidates.length-1)]);
+  next.rngState=rng.state;next.focusRerollYear=next.year;return next;
 }

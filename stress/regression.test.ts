@@ -1,3 +1,4 @@
+import {resolveDecisions} from '../src/tests/resolve-decisions';
 import { expect, it } from 'vitest';
 import { createCareer } from '../src/engine/career';
 import { advanceRound, nextSeason, resolveHighlight, pendingPaId } from '../src/engine/season';
@@ -31,7 +32,7 @@ it.each(['HITTER', 'PITCHER'] as const)('%s 16~38세 고교 3년·프로 20시�
     else if (save.phase === 'SEASON_RESULT') {
       if (!isYouth(save)) save = signContract(save, 1);
       if (save.pendingTrade) save = resolveTrade(save, false);
-      save = nextSeason(save);
+      save = nextSeason(resolveDecisions(save));
     } else save = advanceRound(save, { interactive: false, autoChoices: true });
   }
   expect(save.player.age).toBe(38); expect(save.seasons).toHaveLength(20); expect(save.youth?.history).toHaveLength(3);

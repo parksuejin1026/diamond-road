@@ -11,7 +11,8 @@ it('FA 전에는 타 구단 제안 없이 1년 연봉 재계약을 한다', () =
   expect(save.contractOffers).toHaveLength(1);
   expect(save.contractOffers[0]).toMatchObject({ teamId: 'lg', years: 1, kind: 'RENEWAL' });
   const offered = save.contractOffers[0].salaryCR;
-  const next = nextSeason(save);
+  expect(()=>nextSeason(save)).toThrow('계약');
+  const next = nextSeason(signContract(save,0));
   expect(next.player.salaryCR).toBe(offered); expect(next.player.teamId).toBe('lg');
   expect(next.contractHistory).toHaveLength(save.contractHistory.length + 1);
   expect(nextSeason(next)).toBe(next);

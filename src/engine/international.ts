@@ -6,13 +6,13 @@ import { overall } from '../domain/calculators';
 import { Rng } from './rng';
 import { credit, life } from './life';
 export const WORLD_TEAMS=[{id:'kor',name:'대한민국',strength:76},{id:'jpn',name:'일본',strength:85},{id:'usa',name:'미국',strength:86},{id:'dom',name:'도미니카',strength:83},{id:'tpe',name:'대만',strength:73},{id:'mex',name:'멕시코',strength:79},{id:'ven',name:'베네수엘라',strength:80},{id:'cub',name:'쿠바',strength:74}];
-export interface WorldReport {year:number;selected:boolean;rank:number;games:GameResult[];hitter:import('../domain/types').HitterStats|null;pitcher:import('../domain/types').PitcherStats|null;}
+export interface WorldReport { participated?:boolean;year:number;selected:boolean;rank:number;games:GameResult[];hitter:import('../domain/types').HitterStats|null;pitcher:import('../domain/types').PitcherStats|null;}
 export interface Military {status:'PENDING'|'ATHLETE'|'SANGMU'|'REGULAR'|'COMPLETED';appliedYears:number[];startYear?:number;monthsServed:number;history:{year:number;text:string}[];}
 export function military(save:CareerSave):Military{return save.military??={status:'PENDING',appliedYears:[],monthsServed:0,history:[]};}
-export function simulateWorld(save:CareerSave){
+export function simulateWorld(save:CareerSave, participate=true){
   if(save.year<2027||(save.year-2027)%4||(save.youth&&!save.youth.graduated)||save.world?.some(r=>r.year===save.year))return;
   const rng=new Rng((save.seed^save.year^0x57bcd)>>>0);
-  const korean=(['HITTER','PITCHER'] as const).flatMap(role=>save.players.filter(p=>p.role===role&&p.rosterStatus!=='MINORS').sort((a,b)=>overall(b)-overall(a)||a.id.localeCompare(b.id)).slice(0,12)).map(p=>({...structuredClone(p),teamId:'kor'}));
+  const korean=(['HITTER','PITCHER'] as const).flatMap(role=>save.players.filter(p=>p.role===role&&(participate||p.id!==save.player.id)&&p.rosterStatus!=='MINORS').sort((a,b)=>overall(b)-overall(a)||a.id.localeCompare(b.id)).slice(0,12)).map(p=>({...structuredClone(p),teamId:'kor'}));
   const selected=korean.some(p=>p.id===save.player.id),players=[...korean];
   for(const team of WORLD_TEAMS.slice(1))for(let i=0;i<24;i++){
     const p=makePlayer(`world-${team.id}-${i}`,`${team.name} ${i+1}`,i<12?'HITTER':'PITCHER',team.id,rng);
@@ -30,7 +30,7 @@ export function simulateWorld(save:CareerSave){
     for(let i=0;i<entrants.length;i+=2){const winner=play(entrants[i],entrants[i+1],`세계대회 ${stage}`);next.push(winner);if([entrants[i],entrants[i+1]].includes('kor'))rank=winner==='kor'?Math.max(1,entrants.length/2):entrants.length/2+1;}
     entrants=next;
   }
-  save.world=[...(save.world??[]),{year:save.year,selected,rank,games:cup.league.results,hitter:selected&&save.player.role==='HITTER'?cup.league.hitters.user:null,pitcher:selected&&save.player.role==='PITCHER'?cup.league.pitchers.user:null}];
+  save.world=[...(save.world??[]),{year:save.year,participated:participate,selected,rank,games:cup.league.results,hitter:selected&&save.player.role==='HITTER'?cup.league.hitters.user:null,pitcher:selected&&save.player.role==='PITCHER'?cup.league.pitchers.user:null}];
   if(selected){credit(save,`world-prize-${save.year}`,rank===1?20000000:5000000,'세계 야구 대회 상금');save.player.reputation=Math.min(100,(save.player.reputation??0)+(rank===1?10:3));}
 }
 export function updateMilitary(save:CareerSave){

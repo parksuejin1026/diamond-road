@@ -1,3 +1,4 @@
+import {resolveDecisions} from './resolve-decisions';
 import {buyShopItem,shopState,SHOP_ITEMS} from '../engine/shop';
 import { expect,it } from 'vitest';
 import { createCareer } from '../engine/career';
@@ -60,14 +61,14 @@ it('세계대회 우승만으로 병역 상태를 바꾸지 않는다',()=>{
 });
 it('일반 복무는 KBO 기록·FA 등록일을 늘리지 않고 복귀한다',()=>{
  let save=create();save.phase='SEASON_RESULT';save.player.age=22;save.contractService={days:145,faUses:0,lastFADays:0,activeRounds:0};
- save=applyMilitary(save,false);expect(military(save).status).toBe('REGULAR');const next=nextSeason(save);
+ save=applyMilitary(save,false);expect(military(save).status).toBe('REGULAR');const next=nextSeason(resolveDecisions(save));
  expect(next.military?.status).toBe('COMPLETED');expect(next.military?.monthsServed).toBe(18);expect(next.contractService?.days).toBe(145);expect(next.serviceRecords?.[0].games).toBe(0);expect(next.player.teamId).toBe(save.player.teamId);expect(next.year).toBe(2029);
 });
 it('짧은 은퇴 커리어는 임의의 실존 선수 유사도를 표시하지 않는다',()=>{const save=create();expect(legacyComparison(save)).toEqual([]);expect(retiredNumber(save)).toEqual([]);expect(retire(save).phase).toBe('RETIRED');});
 it('상무 선발 후 별도 경기 기록을 남기고 원소속팀과 KBO 누적 기록을 보존한다',()=>{
  let enlisted:ReturnType<typeof create>|undefined;
  for(let seed=1;seed<=30;seed++){const save=createCareer({name:'상무 지원',role:'HITTER',teamId:'lg',hand:'RIGHT'},seed);save.phase='SEASON_RESULT';save.player.age=22;const next=applyMilitary(save,true);if(next.military?.status==='SANGMU'){enlisted=next;break;}}
- expect(enlisted).toBeTruthy();const result=nextSeason(enlisted!);expect(result.military?.status).toBe('COMPLETED');expect(result.serviceRecords?.[0].games).toBe(60);expect(result.serviceRecords?.[0].hitter?.g).toBeGreaterThan(0);expect(result.seasons).toHaveLength(0);expect(result.league.hitters.user.g).toBe(0);expect(result.player.teamId).toBe('lg');expect(life(result).cash).toBe(life(enlisted!).cash);
+ expect(enlisted).toBeTruthy();const result=nextSeason(resolveDecisions(enlisted!));expect(result.military?.status).toBe('COMPLETED');expect(result.serviceRecords?.[0].games).toBe(60);expect(result.serviceRecords?.[0].hitter?.g).toBeGreaterThan(0);expect(result.seasons).toHaveLength(0);expect(result.league.hitters.user.g).toBe(0);expect(result.player.teamId).toBe('lg');expect(life(result).cash).toBe(life(enlisted!).cash);
 },30000);
 it('중간 은퇴는 확정된 출전 기록을 보존하고 미지급 연봉을 지급하지 않는다',()=>{
  let save=create();save=advanceRound(save,{interactive:false});const cash=life(save).cash,result=retire(save);expect(result.seasons).toHaveLength(1);expect(result.seasons[0].hitter).toEqual(save.league.hitters.user);expect(life(result).cash).toBe(cash);expect(retire(result)).toBe(result);

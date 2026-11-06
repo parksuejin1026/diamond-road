@@ -1,4 +1,6 @@
 'use client';
+import DecisionScreen from './DecisionScreen';
+import { pendingDecision } from '../engine/decisions';
 import TeamMark from './TeamMark';
 import PixelPlayer from './pixel/PixelPlayer';
 import DraftReveal from './DraftReveal';
@@ -21,7 +23,7 @@ import CareerHome from './CareerHome';
 
 import PositionSettings from './PositionSettings';
 
-import { isYouth, teamName } from '../engine/youth';
+import { educationLabel, graduationGrade, isYouth, teamName } from '../engine/youth';
 
 const labels: Record<string, string> = { contact: '컨택', power: '파워', eye: '선구안', speed: '주력', defense: '수비', mental: '정신력', velocity: '구속', control: '제구', breaking: '변화구', stamina: '체력' };
 const phaseLabels: Record<string, string> = { POSTSEASON: '포스트시즌', PRESEASON: '프리시즌', SIMULATING: '정규 시즌', HIGHLIGHT_READY: '결정적 순간', MINI_GAME: '경기 재개', SEASON_RESULT: '시즌 결산', RETIRED: '명예의 전당', DRAFT: '신인 드래프트' };
@@ -47,12 +49,14 @@ export default function CareerApp() {
     if (!window.confirm('은퇴 기록을 보관하고 새로운 야구 인생을 시작할까요?')) return;
     setBusy(true); try { await deleteCareer(); setSave(null); setTab('home'); } catch { setError('저장 데이터 삭제에 실패했습니다.'); } finally { setBusy(false); }
   }
+  const decision=save?pendingDecision(save):null;
+  if(ready&&save&&decision&&pathname.replace(/\/$/,'')==='/career')return <>{error&&<p role="alert" className="error">{error}</p>}<DecisionScreen key={`${save.year}-${decision}`} save={save} busy={busy} update={persist} kind={decision}/></>;
   if(ready&&save?.phase==='DRAFT'&&pathname.replace(/\/$/,'')==='/career')return <main className="draftPage">{error&&<p role="alert" className="error">{error}</p>}<DraftReveal save={save} busy={busy} update={persist}/></main>;
   return <main className={save ? `inCareer tab-${tab}` : ''}>
     <header><a href={(process.env.NEXT_PUBLIC_BASE_PATH || '') + '/'} className="brand">D<span>◆</span>R <small>DIAMOND ROAD</small></a><span className="badge">DIAMOND ROAD · CAREER</span></header>
     {error && <p role="alert" className="error">{error}</p>}
     {!ready || (save && pathname.replace(/\/$/, '') !== '/career') ? <section className="panel" role="status">커리어를 불러오는 중…</section> : save ? <section className="panel">
-      <div hidden={tab !== 'player'}><div className="panelHead"><div><p className="eyebrow">{save.year} · {isYouth(save) ? `고교 ${save.youth!.grade}학년` : phaseLabels[save.phase]}</p><h2>{save.player.name} <small>{save.player.age}세 / {positionName(save.player)} · {statusLabels[save.player.rosterStatus ?? 'BENCH']}</small></h2><p><TeamMark id={save.player.teamId}/>{teamName(save.player.teamId)}{isYouth(save) ? ' · 16세부터 시작한 나의 야구' : ` · 연봉 ${contractMoney(save.player.salaryCR)}`}</p></div><div className="ovr"><span>OVR</span><strong>{overall(save.player)}</strong></div></div>
+      <div hidden={tab !== 'player'}><div className="panelHead"><div><p className="eyebrow">{save.year} · {isYouth(save) ? `${educationLabel(save)} ${save.youth!.grade}학년` : phaseLabels[save.phase]}</p><h2>{save.player.name} <small>{save.player.age}세 / {positionName(save.player)} · {statusLabels[save.player.rosterStatus ?? 'BENCH']}</small></h2><p><TeamMark id={save.player.teamId}/>{teamName(save.player.teamId)}{isYouth(save) ? ' · 16세부터 시작한 나의 야구' : ` · 연봉 ${contractMoney(save.player.salaryCR)}`}</p></div><div className="ovr"><span>OVR</span><strong>{overall(save.player)}</strong></div></div>
       <div className="playerPortraitPanel"><PixelPlayer role={save.player.role} variant={save.life?.appearance} number={save.life?.number}/></div><div className="skills">{Object.entries(save.player.skills).map(([key, value]) => <div key={key}><span>{labels[key]}</span><strong>{value}</strong><meter min="1" max="99" value={value} aria-label={labels[key]} /></div>)}</div>
       <PositionSettings save={save} busy={busy} onChange={persist} /></div>
       {tab === 'home' && (save.phase === 'RETIRED' ? <LegacySummary save={save} onNewCareer={resetCareer} /> : <CareerHome save={save} onSeason={() => setTab('season')} />)}

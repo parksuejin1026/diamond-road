@@ -12,6 +12,7 @@ import type { YouthCareer } from './youth';
 import { FIELD_POSITIONS } from './positions';
 export interface CareerSave { military?: import('./international').Military; world?: import('./international').WorldReport[]; serviceRecords?: {year:number;kind:string;games:number;hitter:import('../domain/types').HitterStats|null;pitcher:import('../domain/types').PitcherStats|null}[]; fieldingPlay?: string; life?: import('./life').Life; moments?: import('./moments').Moment[]; }
 export interface CareerSave { youth?: YouthCareer | null; shop?: import('./shop').ShopState; }
+export interface CareerSave { requestedDecision?: 'MILITARY'; decisions?: string[]; focusRerollYear?: number; }
 export interface CareerSave { trainingHistory?: { year: number; skill: string }[]; }
 export interface CareerSave { focusSkill?: string; development?: import('./development').DevelopmentReport; }
 export interface CareerSave { contractService?: import('./contracts').ContractService; }

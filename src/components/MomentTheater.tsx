@@ -1,12 +1,12 @@
 'use client';
-import { useState } from 'react';
-import type { CareerSave } from '../engine/career';
+import {useState} from 'react';
+import type {CareerSave} from '../engine/career';
+import {personalMoment} from '../engine/moments';
 import PixelPlayer from './pixel/PixelPlayer';
 import PixelBallpark from './pixel/PixelBallpark';
 export default function MomentTheater({save}:{save:CareerSave}){
-  const [index,setIndex]=useState(0),[playing,setPlaying]=useState(false);
-  const moments=(save.moments??[]).filter(m=>m.year===save.year);
-  if(!moments.length)return null;
-  const m=moments[Math.min(index,moments.length-1)];
-  return <section className="momentTheater"><p className="eyebrow">OCTOBER · {m.stage}</p><h3>{m.walkoff?'끝내기 ':''}{m.grandSlam?'만루 ':''}{m.kind==='CHAMPION'?'한국시리즈 우승':m.kind==='HOME_RUN'?'홈런':m.kind==='CATCH'?'슈퍼 캐치':'삼진'}</h3><p>{m.name} · {m.inning}회 · {m.outs}아웃 · {m.bases}명 출루</p><div key={`${m.id}-${playing}`} className={`momentScene ${playing?'playing':''} action-${m.kind}`}><PixelBallpark/><div className="momentActor"><PixelPlayer role={m.kind==='STRIKEOUT'?'PITCHER':'HITTER'} variant={save.life?.appearance}/></div>{m.kind==='CHAMPION'&&<div className="championConfetti">◆ ✦ ◆ ✦ ◆ ✦ ◆</div>}<i className="momentBall"/><span className="momentImpact">{m.kind==='CHAMPION'?'WE ARE CHAMPIONS!':m.kind==='CATCH'?'SUPER CATCH!':m.walkoff?'WALK OFF!':m.kind==='HOME_RUN'?'HOME RUN!':'STRIKE THREE!'}</span></div><p>{m.before} → {m.after}</p><div className="actions"><button onClick={()=>setPlaying(!playing)}>{playing?'연출 정지':'명장면 재생'}</button><button onClick={()=>{setIndex((index+1)%moments.length);setPlaying(false);}}>다음 장면 · {index+1}/{moments.length}</button></div><p className="footnote">실제 포스트시즌 결과를 재생합니다.</p></section>;
+ const [replay,setReplay]=useState(0),m=personalMoment(save);if(!m)return null;
+ const kind=m.kind,title=kind==='CHAMPION'?'한국시리즈 우승':kind==='HOME_RUN'?`${m.walkoff?'끝내기 ':''}${m.grandSlam?'만루 ':''}홈런`:kind==='CATCH'?'슈퍼 캐치':'탈삼진';
+ const motion=kind==='HOME_RUN'?'bat':kind==='STRIKEOUT'?'pitch':kind==='CATCH'?'catch':'celebrate';
+ return <section className="momentTheater" aria-label="나의 명장면"><p className="eyebrow">{m.stage} · {m.inning}회 · {m.outs}아웃</p><h2>{m.name}의 {title}</h2><div key={`${m.id}-${replay}`} className={`momentScene playing action-${kind}`}><PixelBallpark/><div className="momentOpponent"><PixelPlayer role={kind==='STRIKEOUT'?'HITTER':'PITCHER'} motion={kind==='HOME_RUN'?'pitch':'idle'} accent="#754355" variant={2}/></div><div className="momentActor"><PixelPlayer role={kind==='STRIKEOUT'?'PITCHER':'HITTER'} motion={motion} variant={save.life?.appearance} number={save.life?.number}/></div><i className="momentBall"/><i className="momentDust"/><span className="momentImpact">{kind==='CHAMPION'?'CHAMPIONS!':kind==='CATCH'?'SUPER CATCH!':kind==='STRIKEOUT'?'STRIKE THREE!':m.walkoff?'WALK OFF!':'HOME RUN!'}</span>{kind==='CHAMPION'&&<div className="championConfetti">◆ ✦ ◆ ✦ ◆ ✦ ◆</div>}<span className="momentCaption">{m.stage} · {m.before} → {m.after}</span></div><p>{m.before} → {m.after} · 실제 경기 기록의 장면입니다.</p><button onClick={()=>setReplay(replay+1)}>명장면 다시 재생</button></section>;
 }

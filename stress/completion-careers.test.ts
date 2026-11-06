@@ -1,3 +1,4 @@
+import {resolveDecisions} from '../src/tests/resolve-decisions';
 import {buyShopItem,shopState,SHOP_ITEMS} from '../src/engine/shop';
 import { afterAll, expect, it } from 'vitest';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -21,7 +22,7 @@ it.each(Array.from({length:10},(_,i)=>i+1))('seed %i: 준비·아이템·고교�
       seasons.push({year:save.year,ovr:save.seasons.at(-1)?.ovr,user:save.league.hitters.user??save.league.pitchers.user,role:save.player.pitchingRole,winner,winnerStats:winner?save.league.hitters[winner]??save.league.pitchers[winner]:null});
       if(save.pendingTrade)save=resolveTrade(save,true);
       if(save.contractOffers.length){const offer=save.contractOffers.findIndex(c=>c.kind==='FA'&&c.teamId!==save.player.teamId);save=signContract(save,offer>=0?offer:0);}
-      save=nextSeason(save);
+      save=nextSeason(resolveDecisions(save));
     }else{
       if(save.phase==='PRESEASON'){
         const offered=shopState(save).stock.map(id=>SHOP_ITEMS.find(i=>i.id===id)!).sort((a,b)=>b.price-a.price);

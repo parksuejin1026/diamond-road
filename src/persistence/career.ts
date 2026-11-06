@@ -1,3 +1,4 @@
+import { createUniversitySchedule, UNIVERSITIES } from '../engine/schools';
 import { prepareLife } from '../engine/life';
 import type { CareerSave } from '../engine/career';
 import { emptyLeague, emptyHitter, emptyPitcher } from '../engine/season';
@@ -50,7 +51,7 @@ export async function loadCareer(): Promise<CareerSave | null> {
 async function loadCandidate(key: string): Promise<CareerSave | null> {
   let value = await access('readonly', store => store.get(key)) as CareerSave | undefined;
   if (!value) return null;
-  if (value.schemaVersion !== 1 || !['POSTSEASON', 'PRESEASON', 'SIMULATING', 'HIGHLIGHT_READY', 'MINI_GAME', 'DRAFT', 'SEASON_RESULT', 'RETIRED'].includes(value.phase) || !value.player || !value.player.skills || !Array.isArray(value.players) || !Array.isArray(value.schedule) || ![560, 720, 728].includes(value.schedule.length)) throw new Error('지원하지 않거나 손상된 저장 데이터입니다.');
+  if (value.schemaVersion !== 1 || !['POSTSEASON', 'PRESEASON', 'SIMULATING', 'HIGHLIGHT_READY', 'MINI_GAME', 'DRAFT', 'SEASON_RESULT', 'RETIRED'].includes(value.phase) || !value.player || !value.player.skills || !Array.isArray(value.players) || !Array.isArray(value.schedule) || (![560, 720, 728].includes(value.schedule.length) && !(value.youth?.level==='UNIVERSITY' && value.schedule.length===createUniversitySchedule(value.seed).length))) throw new Error('지원하지 않거나 손상된 저장 데이터입니다.');
   value = migrateTeamNames(value);
   // Upgrade the initial development save without discarding the created player.
   if (!value.league && value.phase === 'PRESEASON') { value.league = emptyLeague(value.players); value.year = 2026; value.seasons = []; }
@@ -60,6 +61,7 @@ async function loadCandidate(key: string): Promise<CareerSave | null> {
   if (['HIGHLIGHT_READY', 'MINI_GAME'].includes(value.phase) && !value.pendingGame) throw new Error('중요 상황 저장 데이터가 손상되었습니다.');
   if (!value.league || !Number.isInteger(value.league.round) || value.league.round < 0 || value.league.round > Math.max(...value.schedule.map(g => g.round)) || !Array.isArray(value.league.results) || !Array.isArray(value.seasons) || !value.league.hitters || !value.league.pitchers || !Array.isArray(value.league.standings)) throw new Error('시즌 저장 데이터가 손상되었습니다.');
   const validInt = (n: unknown) => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
+  if(value.focusSkill!==undefined&&!(value.focusSkill in value.player.skills)||value.focusRerollYear!==undefined&&(!validInt(value.focusRerollYear)||value.focusRerollYear>value.year)||value.requestedDecision!==undefined&&value.requestedDecision!=='MILITARY')throw new Error('진로 선택 저장이 손상되었습니다.');
   if(value.shop){
     const shop=value.shop,ids=new Set(SHOP_ITEMS.filter(i=>!i.role||i.role===value.player.role).map(i=>i.id));
     if(!validInt(shop.year)||shop.year>value.year||!Array.isArray(shop.stock)||shop.stock.length!==3||new Set(shop.stock).size!==3||shop.stock.some(id=>!ids.has(id))||!Array.isArray(shop.history)||new Set(shop.history.map(h=>h.year)).size!==shop.history.length||shop.history.some(h=>!validInt(h.year)||h.year>value.year||!ids.has(h.id)||!validInt(h.price)||!h.gains||Object.entries(h.gains).some(([k,g])=>!(k in value.player.skills)||!validInt(g)||g>10))||(shop.purchased!==null&&(!shop.stock.includes(shop.purchased)||!shop.history.some(h=>h.year===shop.year&&h.id===shop.purchased))))throw new Error('아이템 상점 저장 데이터가 손상되었습니다.');
@@ -94,7 +96,9 @@ async function loadCandidate(key: string): Promise<CareerSave | null> {
   }
   const playerIds = new Set(value.players.map(p => p.id));
   if (value.players.length !== value.league.standings.length * 18 || playerIds.size !== value.players.length || !playerIds.has(value.player.id) || !validInt(value.rngState) || !validInt(value.year) || !validInt(value.highlightCount) || value.highlightCount > 3) throw new Error('선수 저장 데이터가 손상되었습니다.');
-  if (value.youth && (!Number.isInteger(value.youth.grade) || value.youth.grade < 1 || value.youth.grade > 3 || !Array.isArray(value.youth.history))) throw new Error('고교 커리어 저장이 손상되었습니다.');
+  if (value.youth && (!Number.isInteger(value.youth.grade) || value.youth.grade < 1 || value.youth.grade > (value.youth.level==='UNIVERSITY'?4:3) || !Array.isArray(value.youth.history))) throw new Error('고교 커리어 저장이 손상되었습니다.');
+  if(value.youth?.level==='UNIVERSITY'&&!UNIVERSITIES.some(t=>t.id===value.youth!.schoolId))throw new Error('대학 커리어 저장이 손상되었습니다.');
+  if(value.decisions&&(!Array.isArray(value.decisions)||value.decisions.some(id=>typeof id!=='string')||new Set(value.decisions).size!==value.decisions.length))throw new Error('이벤트 저장이 손상되었습니다.');
   value.players = value.players.map(p => p.id === value.player.id ? value.player : p);
   for (const player of value.players) {
     if (player.position !== undefined && (player.role !== 'HITTER' || !FIELD_POSITIONS.some(p => p.id === player.position))) throw new Error('수비 포지션 저장 데이터가 손상되었습니다.');

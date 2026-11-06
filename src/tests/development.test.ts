@@ -6,7 +6,8 @@ import { Rng } from '../engine/rng';
 it('집중 육성은 수비도 선택하고 시즌 시작 후 변경하지 못한다', () => {
   const save = createCareer({ name: '육성', role: 'HITTER', teamId: 'lg', hand: 'RIGHT', focus: 'defense' }, 1);
   expect(focusSkill(save)).toBe('defense');
-  const changed = selectFocus(save, 'speed'); expect(changed).toBe(save);
+  const changed = selectFocus(save, 'speed'); expect(focusSkill(changed)).toBe('speed');
+  expect(changed.life?.growth?.skills).toContain('speed');
   expect(selectFocus(save, 'velocity')).toBe(save);
   const running = { ...changed, phase: 'SIMULATING' as const };
   expect(selectFocus(running, 'power')).toBe(running);
@@ -17,7 +18,8 @@ it('특성에 따른 두 능력치만 자동 성장하고 결산 재처리는 �
   const contact = selectFocus(structuredClone(save), 'contact');
   const defense = selectFocus(structuredClone(save), 'defense');
   developPlayer(contact, new Rng(42)); developPlayer(defense, new Rng(42));
-  expect(defense.player.skills).toEqual(contact.player.skills);
+  expect(defense.player.skills.defense).toBeGreaterThan(save.player.skills.defense);
+  expect(contact.player.skills.contact).toBeGreaterThan(save.player.skills.contact);
   expect(Object.keys(save.player.skills).filter(k=>defense.player.skills[k]>save.player.skills[k])).toHaveLength(2);
   const before = structuredClone(defense);
   developPlayer(defense, new Rng(99)); expect(defense).toEqual(before);
