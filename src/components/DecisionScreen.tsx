@@ -1,4 +1,6 @@
 'use client';
+import AwardCeremony from './AwardCeremony';
+import {pendingHonor} from '../engine/awardCeremony';
 import TurningPointScreen from './TurningPointScreen';
 import {useEffect,useRef,useState} from 'react';
 import type {CareerSave} from '../engine/career';
@@ -17,9 +19,10 @@ import {WorldTournamentResult} from './InternationalPanel';
 export default function DecisionScreen({save,busy,update,kind}:{save:CareerSave;busy:boolean;update:(s:CareerSave)=>void;kind:Decision}){
  const [university,setUniversity]=useState(UNIVERSITIES[0].id),[search,setSearch]=useState('');
  const heading=useRef<HTMLHeadingElement>(null);useEffect(()=>{heading.current?.focus();window.scrollTo(0,0);},[kind,save.year]);
- const titles:Record<Decision,string>={TURNING_POINT:'커리어의 새로운 가능성',TURNING_RESULT:'전환점의 선택',CAREER_EVENT:'당신의 선택을 기다립니다',MEETING:'감독과의 면담',MOMENT:'나의 가을 야구 명장면',ASIAN:'아시안게임 대표팀 도전',WORLD:'세계 야구 대회 대표팀 도전',ASIAN_RESULT:'아시안게임 결과',WORLD_RESULT:'세계 야구 대회 결과',CONTRACT:save.pendingTrade?'트레이드 제안':'새 시즌의 계약을 선택하세요',MILITARY:'병역 진로를 선택하세요',MILITARY_RESULT:'병역 진행 결과',EDUCATION:`${educationLabel(save)} 졸업, 다음 무대를 정하세요`};
+ const titles:Record<Decision,string>={HONOR:'당신의 이름이 불리는 순간',TURNING_POINT:'커리어의 새로운 가능성',TURNING_RESULT:'전환점의 선택',CAREER_EVENT:'당신의 선택을 기다립니다',MEETING:'감독과의 면담',MOMENT:'나의 가을 야구 명장면',ASIAN:'아시안게임 대표팀 도전',WORLD:'세계 야구 대회 대표팀 도전',ASIAN_RESULT:'아시안게임 결과',WORLD_RESULT:'세계 야구 대회 결과',CONTRACT:save.pendingTrade?'트레이드 제안':'새 시즌의 계약을 선택하세요',MILITARY:'병역 진로를 선택하세요',MILITARY_RESULT:'병역 진행 결과',EDUCATION:`${educationLabel(save)} 졸업, 다음 무대를 정하세요`};
  const event=EVENTS.find(e=>e.id===save.pendingEvent),meeting=save.life?.meeting;
  return <main className="decisionPage"><section className="decisionCard" aria-labelledby="decisionTitle"><p className="eyebrow">{save.year} · {save.player.name} · CAREER DECISION</p><h1 id="decisionTitle" ref={heading} tabIndex={-1}>{titles[kind]}</h1>
+ {kind==='HONOR'&&<AwardCeremony key={pendingHonor(save)} save={save} busy={busy} update={update}/>}
  {(kind==='TURNING_POINT'||kind==='TURNING_RESULT')&&<TurningPointScreen save={save} busy={busy} update={update} result={kind==='TURNING_RESULT'}/>}
  {kind==='CAREER_EVENT'&&event&&<><h2>{event.title}</h2><p>{event.description}</p><div className="decisionOptions">{event.choices.map((c,i)=><button key={i} disabled={busy} onClick={()=>update(chooseEvent(save,event.id,i))}>{c.label}</button>)}</div></>}
  {kind==='MEETING'&&meeting&&<><p>새 시즌의 방향을 함께 결정합니다.</p><div className="decisionOptions">{meeting.style!==undefined&&<button disabled={busy} onClick={()=>update(answerMeeting(save,'style',true))}>{PLAYER_STYLES[save.player.role][meeting.style].name} 특성 변경 수락</button>}{meeting.position&&<button disabled={busy} onClick={()=>update(answerMeeting(save,'position',true))}>{meeting.position} 포지션 전환 {meeting.selfRequest?'요청':'수락'}</button>}<button disabled={busy} onClick={()=>update(answerMeeting(save,'style',false))}>현재 방향 유지</button></div></>}

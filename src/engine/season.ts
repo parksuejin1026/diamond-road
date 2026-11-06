@@ -14,6 +14,7 @@ import { TEAMS, createSchedule } from './schedule';
 import { restoreAvailability } from './availability';
 import { createOffers, recordContractRound, finishContractYear, contractService, settleContractYear, proposeTrade } from './contracts';
 import { calculateAwards } from './awards';
+import {calculateSeriesMvp} from './seriesMvp';
 import { isYouth, finishSchoolYear, nextSchoolYear, seasonRounds, type SchoolCup } from './youth';
 import { createRoster } from './roster';
 import { developPlayer } from './development';
@@ -249,7 +250,13 @@ function simulatePostseason(save: CareerSave, rng: Rng) {
   }
   const semiWinner = series(ranked[2], wildcard, 3, '준플레이오프');
   const playoffWinner = series(ranked[1], semiWinner, 3, '플레이오프');
-  return { champion: series(ranked[0], playoffWinner, 4, '한국시리즈'), games: post.league.results };
+  // Earlier rounds are kept as game results, but do not count toward Series MVP.
+  const beforeSeries = structuredClone(post.league);
+  const champion = series(ranked[0], playoffWinner, 4, '한국시리즈');
+  const seriesLeague = structuredClone(post.league);
+  for (const [id, stats] of Object.entries(seriesLeague.hitters)) for (const key of Object.keys(stats) as (keyof HitterStats)[]) stats[key] = (stats[key] ?? 0) - (beforeSeries.hitters[id]?.[key] ?? 0);
+  for (const [id, stats] of Object.entries(seriesLeague.pitchers)) for (const key of Object.keys(stats) as (keyof PitcherStats)[]) stats[key] -= beforeSeries.pitchers[id]?.[key] ?? 0;
+  return { champion, games: post.league.results, mvp: calculateSeriesMvp(seriesLeague, save.players, champion) };
 }
 export function resolveHighlight(original: CareerSave, paId: string, result?: PAResult, miniRngState?: number, pitches?: number): CareerSave {
   if (!['HIGHLIGHT_READY', 'MINI_GAME'].includes(original.phase) || !original.pendingGame || pendingPaId(original) !== paId) return original;
@@ -357,7 +364,9 @@ export function playPostseason(original:CareerSave):CareerSave {
   if(original.phase!=='POSTSEASON')return original;
   const save=structuredClone(original),rng=new Rng(save.rngState);
     save.awards = calculateAwards(save.league, save.players);
-    save.postseason = simulatePostseason(save, rng);
+    const postseason = simulatePostseason(save, rng);
+    save.postseason = {champion: postseason.champion, games: postseason.games};
+    if(postseason.mvp)save.awards.push(postseason.mvp);
     if(save.postseason.champion===save.player.teamId){
       save.moments??=[];
       const last=save.postseason.games.at(-1)!;

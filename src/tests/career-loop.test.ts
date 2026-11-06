@@ -18,7 +18,10 @@ it('포스트시즌은 정규 기록과 분리되고 이적 후 구단별 선수
   while (save.phase !== 'SEASON_RESULT') save = advanceRound(save, { interactive: false, autoChoices: true });
   expect(save.postseason?.games.length).toBeGreaterThanOrEqual(7);
   expect(new Set(save.postseason?.games.map(g => g.stage))).toEqual(new Set(['와일드카드', '준플레이오프', '플레이오프', '한국시리즈']));
-  expect(save.awards).toEqual(calculateAwards(save.league, save.players));
+  expect(save.awards.filter(a=>a.title!=='한국시리즈 MVP')).toEqual(calculateAwards(save.league, save.players));
+  const seriesAwards=save.awards.filter(a=>a.title==='한국시리즈 MVP');
+  expect(seriesAwards).toHaveLength(1);
+  expect(save.players.find(p=>p.id===seriesAwards[0].playerId)?.teamId).toBe(save.postseason?.champion);
   expect(save.league.results).toHaveLength(720);
   expect(save.contractOffers).toHaveLength(4);
   const moved = signContract(save, 1);

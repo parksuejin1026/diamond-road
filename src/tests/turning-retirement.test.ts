@@ -72,3 +72,18 @@ it('이벤트 없는 시즌에 은퇴해도 저장 복구가 은퇴 전 백업�
  await saveCareer(save);await saveCareer(retire(save));const loaded=(await loadCareer())!;
  expect(loaded.phase).toBe('RETIRED');expect(loaded.life!.turningPoint!.status).toBe('NONE');
 });
+
+it.each(['HITTER','PITCHER'] as const)('학생 %s 중도 은퇴는 확정 기록을 학생 통산에만 포함하고 완료 학년과 중복하지 않는다',role=>{
+ const save=make(role);save.phase='SIMULATING';save.league.round=3;
+ if(role==='HITTER')Object.assign(save.league.hitters.user,{g:3,ab:10,pa:12,h:4});
+ else Object.assign(save.league.pitchers.user,{g:2,outs:18,so:7});
+ const retired=retire(save),before=structuredClone(retired),summary=careerSummary(retired);
+ expect(summary.studentYears).toHaveLength(1);expect(summary.studentYears[0].partial).toBe(true);
+ expect(summary.hitter.g).toBe(0);expect(summary.pitcher.g).toBe(0);
+ expect(role==='HITTER'?summary.studentHitter.h:summary.studentPitcher.so).toBe(role==='HITTER'?4:7);
+ expect(retired).toEqual(before);
+ retired.youth!.history=[summary.studentYears[0]];
+ expect(careerSummary(retired).studentYears).toHaveLength(1);
+ expect(role==='HITTER'?careerSummary(retired).studentHitter.h:careerSummary(retired).studentPitcher.so).toBe(role==='HITTER'?4:7);
+ const noGames=make(role);expect(careerSummary(retire(noGames)).studentYears).toHaveLength(0);
+});

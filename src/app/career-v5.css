@@ -14,3 +14,5 @@ body{line-height:1.65}h1,h2,.brand,.eyebrow{font-family:Galmuri,"Malgun Gothic",
 .inCareer>.panel{max-width:none;min-width:0}.inCareer>footer{display:none}
 @media(max-width:999px){main.inCareer{display:flex;flex-direction:column}.inCareer>.panel{flex:1;min-height:0}.seasonActionBar{bottom:0}}
 @media(min-width:1000px){main.inCareer{grid-template-rows:auto auto minmax(0,1fr) auto;padding-bottom:24px}.inCareer>.panel{height:100%;min-height:0}}
+
+.homeNextStep>.primary{margin-bottom:14px}

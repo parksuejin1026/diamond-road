@@ -1,6 +1,6 @@
 import {playStyle} from '../engine/playStyles';
 import TeamMark from './TeamMark';
-import { life, won } from '../engine/life';
+import { life, won, skillNames } from '../engine/life';
 import { TEAMS } from '../engine/schedule';
 import type { CareerSave } from '../engine/career';
 import { overall, hitterRates, pitcherRates } from '../domain/calculators';
@@ -12,12 +12,12 @@ import { positionName } from '../engine/positions';
 import CareerGoal from './CareerGoal';
 export default function CareerHome({ save, onSeason }: { save: CareerSave; onSeason: () => void }) {
   const youth = isYouth(save);
-  const history = youth ? save.youth!.history.filter(y=>(y.level??'HIGH_SCHOOL')===(save.youth!.level??'HIGH_SCHOOL')) : save.seasons;
-  const h = emptyHitter(); const p = emptyPitcher();
-  for (const season of history) {
-    if (season.hitter) for (const key of Object.keys(h) as (keyof typeof h)[]) h[key] = (h[key] ?? 0) + (season.hitter[key] ?? 0);
-    if (season.pitcher) for (const key of Object.keys(p) as (keyof typeof p)[]) p[key] += season.pitcher[key];
-  }
+  const h = save.league.hitters[save.player.id] ?? emptyHitter();
+  const p = save.league.pitchers[save.player.id] ?? emptyPitcher();
+  const state = life(save);
+  const style = playStyle(save.player.role, state.style);
+  const focus = save.focusSkill ?? save.youth?.focus ?? style.growth[0];
+  const role = { STARTER: '주전', BENCH: '벤치', MINORS: '2군', INJURED: '벤치' }[save.player.rosterStatus ?? 'BENCH'];
   const latest = save.youth?.history.at(-1);
   const previous = youth ? latest ? latest.year === save.year ? latest.beforeOvr : latest.afterOvr : undefined : save.seasons.filter(s => s.year < save.year).at(-1)?.ovr ?? (save.development?.year === save.year ? save.development.beforeOvr : undefined);
   const change = previous === undefined ? null : overall(save.player) - previous;
@@ -26,5 +26,5 @@ export default function CareerHome({ save, onSeason }: { save: CareerSave; onSea
   const phaseIndex=save.phase==='PRESEASON'?0:['SIMULATING','HIGHLIGHT_READY','MINI_GAME'].includes(save.phase)?1:save.phase==='POSTSEASON'?2:phases.length-1;
   const action=save.phase==='SEASON_RESULT'?'시즌 결산과 다음 진로 →':save.phase==='POSTSEASON'?'포스트시즌 확인하기 →':save.phase==='PRESEASON'?'시즌 준비하기 →':'시즌 이어가기 →';
   const hint=save.phase==='PRESEASON'?'성장 방향과 장비를 확인한 뒤 시즌을 시작하세요.':save.phase==='SEASON_RESULT'?'한 해의 성장과 성적을 돌아보고 다음 무대를 준비하세요.':save.phase==='POSTSEASON'?'정규시즌을 마쳤습니다. 가을 야구의 결과를 확인하세요.':`${save.league.round}라운드까지 저장했습니다. 선택이 필요한 순간에는 진행이 멈춥니다.`;
-  return <section className="careerHome"><div className="homeScene"><PixelBallpark school={youth} /><PixelPlayer role={save.player.role} variant={save.life?.appearance} number={save.life?.number} accent={TEAMS.find(t=>t.id===save.player.teamId)?.color} /><span className="walletRibbon">현금 {won(life(save).cash)} | 멘탈 {life(save).mentality} | 건강 {save.player.health}</span><span className="sceneCaption">{save.year} · {youth ? `${educationLabel(save)} ${save.youth!.grade}학년` : 'KBO LEAGUE'}</span></div><div className="homeIdentity"><div><p className="eyebrow">MY DIAMOND ROAD</p><h1><span aria-hidden="true"><TeamMark id={save.player.teamId} size={32}/></span>{save.player.name}</h1><p>{teamName(save.player.teamId)} · {save.player.age}세 · {positionName(save.player)}</p></div><div className="ovr"><span>OVR</span><strong>{overall(save.player)}</strong><small>{change === null ? '첫 시즌' : `지난 시즌 대비 ${change > 0 ? '+' : ''}${change}`}</small></div></div><div className="homeStats">{stats.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div><p className="footnote">{youth ? educationLabel(save) : '프로'} 통산 · 완료 시즌 기준</p><div className="homeNextStep"><span className="styleBadge">{playStyle(save.player.role,life(save).style).name}</span><ol className="phaseJourney" aria-label="현재 시즌 단계">{phases.map((p,i)=><li key={p} aria-current={i===phaseIndex?'step':undefined}>{p}</li>)}</ol><p>{hint}</p><button className="primary" onClick={onSeason}>{action}</button></div><details className="longTermGoal"><summary>장기 커리어 목표</summary><CareerGoal save={save}/></details></section>;
+  return <section className="careerHome"><div className="homeScene"><PixelBallpark school={youth} /><PixelPlayer role={save.player.role} variant={save.life?.appearance} number={save.life?.number} accent={TEAMS.find(t=>t.id===save.player.teamId)?.color} /><span className="walletRibbon">현금 {won(life(save).cash)} | 멘탈 {life(save).mentality} | 건강 {save.player.health}</span><span className="sceneCaption">{save.year} · {youth ? `${educationLabel(save)} ${save.youth!.grade}학년` : 'KBO LEAGUE'}</span></div><div className="homeIdentity"><div><p className="eyebrow">MY DIAMOND ROAD</p><h1><span aria-hidden="true"><TeamMark id={save.player.teamId} size={32}/></span>{save.player.name}</h1><p>{teamName(save.player.teamId)} · {save.player.age}세 · {positionName(save.player)}</p></div><div className="ovr"><span>OVR</span><strong>{overall(save.player)}</strong><small>{change === null ? '첫 시즌' : `지난 시즌 대비 ${change > 0 ? '+' : ''}${change}`}</small></div></div><div className="homeStats">{stats.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div><p className="footnote">{save.year} 시즌 · 확정된 경기 기준 · 통산 기록은 기록 탭에서 확인</p><div className="homeNextStep"><button className="primary" onClick={onSeason}>{action}</button><div className="homeSeasonBrief" aria-label="이번 시즌 선수 상황"><div><span>현재 역할</span><strong>{role}</strong></div><div><span>플레이스타일</span><strong>{style.name}</strong></div><div><span>집중 육성</span><strong>{skillNames[focus]}</strong></div></div><ol className="phaseJourney" aria-label="현재 시즌 단계">{phases.map((p,i)=><li key={p} aria-current={i===phaseIndex?'step':undefined}>{p}</li>)}</ol><p>{hint}</p></div><details className="longTermGoal"><summary>장기 커리어 목표</summary><CareerGoal save={save}/></details></section>;
 }

@@ -2,6 +2,7 @@
 import NavIcon from './NavIcon';
 import ConfirmDialog from './ConfirmDialog';
 import DecisionScreen from './DecisionScreen';
+import {pendingHonor} from '../engine/awardCeremony';
 import { pendingDecision } from '../engine/decisions';
 import TeamMark from './TeamMark';
 import PixelPlayer from './pixel/PixelPlayer';
@@ -51,6 +52,7 @@ export default function CareerApp() {
     setBusy(true); try { await deleteCareer(); setSave(null); setTab('home');setConfirmation(null); } catch { setError('저장 데이터 삭제에 실패했습니다.'); } finally { setBusy(false); }
   }
   const confirmationDialog=confirmation&&<ConfirmDialog title={confirmation==='RETIRE'?'선수 생활을 마무리할까요?':'새로운 야구 인생을 시작할까요?'} description={confirmation==='RETIRE'?'확정된 경기 기록과 지금까지의 커리어를 보관하고 은퇴 회고 화면으로 이동합니다. 은퇴한 선수는 다시 경기에 복귀할 수 없습니다.':'현재 은퇴 기록은 아카이브에 남습니다. 새로운 선수의 이름과 첫 유니폼부터 다시 시작합니다.'} confirmLabel={confirmation==='RETIRE'?'은퇴 확정 · 커리어 정리':'기록 보관 · 새 선수 만들기'} cancelLabel={confirmation==='RETIRE'?'계속 플레이':'기록 더 보기'} busy={busy} error={error} onCancel={()=>{if(!busy){setConfirmation(null);setError('');}}} onConfirm={async()=>{if(confirmation==='NEW')await resetCareer();else if(save&&await persist(retire(save)))setConfirmation(null);}}>{save&&confirmation==='RETIRE'&&<div className="dialogCareerFacts"><span>{save.player.name} · {save.player.age}세</span><strong>{save.seasons.length}시즌의 프로 기록</strong><small>진행 중인 시즌은 확정된 라운드까지 보관됩니다.</small></div>}</ConfirmDialog>;
+  if(ready&&save?.phase==='RETIRED'&&pendingHonor(save))return <>{error&&<p role="alert" className="error">{error}</p>}<DecisionScreen save={save} busy={busy} update={persist} kind="HONOR"/></>;
   if(ready&&save?.phase==='RETIRED')return <main className="retirementPage"><header><a className="brand" href={`${process.env.NEXT_PUBLIC_BASE_PATH??''}/`}>D<span>◆</span>R</a><span className="badge">CAREER RETROSPECTIVE</span></header>{error&&!confirmation&&<p className="error" role="alert">{error}</p>}<LegacySummary save={save} onNewCareer={()=>setConfirmation('NEW')}/>{confirmationDialog}</main>;
   const decision=save?pendingDecision(save):null;
   if(ready&&save&&decision&&pathname.replace(/\/$/,'')==='/career')return <>{error&&<p role="alert" className="error">{error}</p>}<DecisionScreen key={`${save.year}-${decision}`} save={save} busy={busy} update={persist} kind={decision}/></>;

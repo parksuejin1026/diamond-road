@@ -38,6 +38,11 @@ export async function dismissDecisions(page:Page,contracts=false){
    if(save.pendingTrade)await page.getByRole('button',{name:'잔류 요청',exact:true}).click();
    else await page.locator('.offer').first().click();
   }else if(kind==='CAREER_EVENT')await page.getByRole('button',{name:EVENTS.find(e=>e.id===save.pendingEvent)!.choices[0].label,exact:true}).click();
+  else if(kind==='HONOR'){
+   const skip=page.getByRole('button',{name:'연출 건너뛰기',exact:true});
+   if(await skip.count())await skip.click();
+   await page.getByRole('button',{name:'수상 확인 · 다음으로 →'}).click();
+  }
   else if(kind==='TURNING_POINT')await page.getByRole('button',{name:'현재 방향 유지',exact:true}).click();
   else if(kind==='TURNING_RESULT')await page.getByRole('button',{name:'확인 · 시즌 이어가기 →'}).click();
   else if(kind==='MEETING')await page.getByRole('button',{name:'현재 방향 유지'}).click();
