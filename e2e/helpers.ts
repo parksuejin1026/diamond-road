@@ -1,4 +1,5 @@
 import {pendingDecision} from '../src/engine/decisions';
+import {EVENTS} from '../src/engine/events';
 import { expect, type Page } from '@playwright/test';
 import type { CareerSave } from '../src/engine/career';
 export async function installSave(page: Page, save: CareerSave, preserveDecision=false) {
@@ -8,11 +9,11 @@ export async function installSave(page: Page, save: CareerSave, preserveDecision
     open.onupgradeneeded=()=>open.result.createObjectStore('saves');
     open.onsuccess=()=>{const db=open.result;const tx=db.transaction('saves','readwrite');tx.objectStore('saves').put(value,'active');tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(tx.error);};
   }),save);
-  await page.reload(); await expect(page).toHaveURL(/\/career\/$/);
+  await page.reload(); await expect(page).toHaveURL(save.phase==='RETIRED'?/\/legacy\/$/:/\/career\/$/);
   if (save.phase === 'RETIRED'||preserveDecision) return;
   await dismissDecisions(page);
   if((await readSave(page)).contractOffers.length||(await readSave(page)).pendingTrade)return;
-  await page.getByRole('button',{name:/시즌 준비하기|시즌 결산과 다음 진로|나의 커리어 돌아보기/}).click();
+  await page.getByRole('button',{name:/시즌 준비하기|시즌 이어가기|포스트시즌 확인하기|시즌 결산과 다음 진로|나의 커리어 돌아보기/}).click();
 }
 export async function readSave(page: Page): Promise<CareerSave> {
   return page.evaluate(()=>new Promise((resolve,reject)=>{
@@ -36,7 +37,10 @@ export async function dismissDecisions(page:Page,contracts=false){
    if(!contracts)return;
    if(save.pendingTrade)await page.getByRole('button',{name:'잔류 요청',exact:true}).click();
    else await page.locator('.offer').first().click();
-  }else if(kind==='MEETING')await page.getByRole('button',{name:'현재 방향 유지'}).click();
+  }else if(kind==='CAREER_EVENT')await page.getByRole('button',{name:EVENTS.find(e=>e.id===save.pendingEvent)!.choices[0].label,exact:true}).click();
+  else if(kind==='TURNING_POINT')await page.getByRole('button',{name:'현재 방향 유지',exact:true}).click();
+  else if(kind==='TURNING_RESULT')await page.getByRole('button',{name:'확인 · 시즌 이어가기 →'}).click();
+  else if(kind==='MEETING')await page.getByRole('button',{name:'현재 방향 유지'}).click();
   else if(kind==='MOMENT')await page.getByRole('button',{name:'명장면 확인 · 다음으로 →'}).click();
   else if(kind==='ASIAN'||kind==='WORLD')await page.getByRole('button',{name:'대표팀 도전 · 선발 심사'}).click();
   else if(kind==='ASIAN_RESULT'||kind==='WORLD_RESULT')await page.getByRole('button',{name:'대회 결과 확인 · 다음으로 →'}).click();
@@ -48,6 +52,16 @@ export async function dismissDecisions(page:Page,contracts=false){
 }
 export async function enterSeason(page:Page){
  await dismissDecisions(page);
- const button=page.getByRole('button',{name:/시즌 준비하기|시즌 결산과 다음 진로/});
+ const button=page.getByRole('button',{name:/시즌 준비하기|시즌 이어가기|포스트시즌 확인하기|시즌 결산과 다음 진로/});
  if(await button.count())await button.click();
+}
+
+export async function runSeason(page:Page){
+ for(let i=0;i<8;i++){
+  await dismissDecisions(page);const before=await readSave(page);
+  if(!['PRESEASON','SIMULATING','HIGHLIGHT_READY','MINI_GAME'].includes(before.phase))return;
+  await page.getByRole('button',{name:/시즌 (전체|이어서) 자동 진행 →/}).click();
+  await expect.poll(async()=>{const s=await readSave(page);return !!pendingDecision(s)||['SEASON_RESULT','POSTSEASON','RETIRED'].includes(s.phase);},{timeout:60000}).toBe(true);
+ }
+ throw new Error('Season did not finish');
 }

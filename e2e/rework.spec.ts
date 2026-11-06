@@ -4,9 +4,9 @@ import {installSave,readSave,createFromWizard,dismissDecisions} from './helpers'
 test('팀 마크·파비콘이 배포 경로에서 열리고 은퇴 기록이 새 커리어 뒤에도 남는다',async({page,request})=>{
  const icon=await request.get('favicon.svg');expect(icon.status()).toBe(200);
  for(const id of ['lg','doosan','kt','ssg','nc','kia','lotte','samsung','hanwha','kiwoom'])expect((await request.get(`teams/${id}.png`)).status()).toBe(200);
- await createFromWizard(page,'은퇴 보관');page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'은퇴하기',exact:true}).click();
- await expect(page.getByText('당신과 닮은 KBO 은퇴 선수')).toBeVisible();
- page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'새로운 야구 인생 시작'}).click();
+ await createFromWizard(page,'은퇴 보관');await page.getByRole('navigation').getByRole('button',{name:'선수',exact:true}).click();await page.getByText('커리어 관리',{exact:true}).click();await page.getByRole('button',{name:'은퇴하기',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'은퇴 확정 · 커리어 정리'}).click();await expect(page).toHaveURL(/legacy/);
+ await expect(page.getByText('HALL OF FAME',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'새로운 야구 인생 시작'}).click();await page.getByRole('dialog').getByRole('button',{name:'기록 보관 · 새 선수 만들기'}).click();
  await page.getByText('은퇴 선수 아카이브 · 1명',{exact:true}).click();await expect(page.getByRole('button',{name:/은퇴 보관 · 0시즌/})).toBeVisible();
 });
 test('실제 저장된 끝내기 연출은 기록 재적용 없이 재생하고 모션 줄이기를 지원한다',async({page})=>{

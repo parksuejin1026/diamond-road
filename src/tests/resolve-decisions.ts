@@ -1,3 +1,4 @@
+import {answerTurningPoint,acknowledgeTurningPoint} from '../engine/turningPoints';
 import type {CareerSave} from '../engine/career';
 import {pendingDecision,acknowledge,resolveTournament} from '../engine/decisions';
 import {signContract,resolveTrade} from '../engine/contracts';
@@ -8,7 +9,9 @@ export function resolveDecisions(original:CareerSave):CareerSave {
  let save=original;
  for(let i=0;i<12;i++){
   const kind=pendingDecision(save);if(!kind||kind==='EDUCATION')return save;
-  if(kind==='MILITARY')save={...save,requestedDecision:undefined};
+  if(kind==='TURNING_POINT')save=answerTurningPoint(save,false);
+  else if(kind==='TURNING_RESULT')save=acknowledgeTurningPoint(save);
+  else if(kind==='MILITARY')save={...save,requestedDecision:undefined};
   else if(kind==='ASIAN'||kind==='WORLD')save=resolveTournament(save,kind,true);
   else if(kind==='CONTRACT')save=save.pendingTrade?resolveTrade(save,false):signContract(save,0);
   else if(kind==='MEETING')save=answerMeeting(save,'style',false);

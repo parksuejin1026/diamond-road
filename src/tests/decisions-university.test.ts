@@ -18,12 +18,10 @@ export function graduatedSchool(role:'HITTER'|'PITCHER'='HITTER'):CareerSave {
  save.youth!.draft={teamId:'lg',round:3,overallPick:25,score:72,signingBonusCR:27000,salaryCR:5000};return save;
 }
 const moment=(id:string,actorId='user',kind:Moment['kind']='HOME_RUN'):Moment=>({id,actorId,year:2026,kind,name:actorId==='user'?'직접 선택':'다른 선수',inning:9,outs:2,bases:0,before:'1 : 1',after:'1 : 2',walkoff:false,grandSlam:false,stage:'한국시리즈'});
-it('선택한 집중 능력치를 성장시키고 랜덤 변경은 연도당 한 번만 저장한다',()=>{
- const save=make();expect(save.life?.growth?.skills).toContain('defense');
- const next=rerollFocus(save);expect(focusSkill(next)).not.toBe('defense');expect(next.life?.growth?.skills).toContain(focusSkill(next));
- expect(rerollFocus(next)).toBe(next);expect(rerollFocus(structuredClone(save))).toEqual(next);
+it('처음 선택한 집중 능력치는 유지되고 매년 누르는 랜덤 변경은 지원하지 않는다',()=>{
+ const save=make();expect(save.life?.growth?.skills).toContain('defense');expect(rerollFocus(save)).toBe(save);expect(focusSkill(save)).toBe('defense');
+ const later={...save,year:2027};expect(rerollFocus(later)).toBe(later);
  save.player.potential=99;const before=save.player.skills.defense;developPlayer(save,new Rng(42));expect(save.player.skills.defense).toBeGreaterThan(before);
- expect(rerollFocus({...next,year:2027})).not.toEqual(next);expect(rerollFocus({...save,phase:'SIMULATING'}).phase).toBe('SIMULATING');
 });
 it('모든 구단 계약은 잔류 제안도 포함해 직접 선택하기 전 다음 시즌을 막는다',()=>{
  for(const kind of ['DRAFT','RENEWAL','EXTENSION','FA','RELEASE','TRADE'] as const){
@@ -74,7 +72,7 @@ it.each(['HITTER','PITCHER'] as const)('%s 대학 4년의 리그·전국대회·
  expect(save.player.age).toBe(23);expect(save.year).toBe(2033);expect(save.youth?.graduated).toBe(true);expect(save.players).toHaveLength(180);expect(save.schedule).toHaveLength(720);
  await saveCareer(save);expect(await loadCareer()).toEqual(save);
 },60000);
-it('미확인 이벤트와 랜덤 집중 변경은 재접속 후에도 유지된다',async()=>{
+it('미확인 이벤트와 직접 선택한 집중 능력은 재접속 후에도 유지된다',async()=>{
  await deleteCareer();let save=make();save=rerollFocus(save);save.phase='SEASON_RESULT';save.moments=[moment('saved')];
  await saveCareer(save);const loaded=(await loadCareer())!;expect(pendingDecision(loaded)).toBe('MOMENT');expect(loaded.focusSkill).toBe(save.focusSkill);
  await saveCareer(acknowledge(loaded,'MOMENT'));expect(pendingDecision((await loadCareer())!)).toBeNull();

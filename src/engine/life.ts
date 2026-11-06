@@ -1,3 +1,5 @@
+import {planTurningPoint} from './turningPoints';
+import {playStyle,styleRedistribution} from './playStyles';
 import type { CareerSave } from './career';
 import type { Player } from '../domain/types';
 import { PLAYER_STYLES } from './roster';
@@ -8,6 +10,8 @@ export const won = (amount:number) => `${Math.round(amount).toLocaleString('ko-K
 export const contractMoney = (amount:number) => won(amount * 10000);
 export interface Life {
   version: 1; cash: number; mentality: number; style: number; appearance: number; number: number;
+  turningPoint?: import('./turningPoints').SeasonTurningPoint;
+  styleHistory?: {year:number;round:number;from:number;to:number}[];
   routine?: 'BALANCED'|'FOOD'|'HOBBY'|'REST'; // Read compatibility only.
   ledger: {id:string;year:number;amount:number;reason:string}[];
   purchases: {year:number;gain:number}[];
@@ -30,24 +34,20 @@ export function credit(save:CareerSave,id:string,amount:number,reason:string) {
   state.cash+=amount; state.ledger.push({id,year:save.year,amount,reason});
 }
 export function prepareLife(save:CareerSave) {
-  const state=life(save); if(state.growth?.year===save.year)return;
+  const state=life(save);planTurningPoint(save); if(state.growth?.year===save.year)return;
   const rng=new Rng((save.seed ^ save.year*7919)>>>0);
   const profile=PLAYER_STYLES[save.player.role][state.style] ?? PLAYER_STYLES[save.player.role][0];
   const candidates=Object.keys(save.player.skills).filter(k=>save.player.skills[k]<99);
   const preferred=save.focusSkill ?? save.youth?.focus;
   const skills:string[]=[];
   if(preferred&&candidates.includes(preferred)){skills.push(preferred);candidates.splice(candidates.indexOf(preferred),1);}
-  while(skills.length<2&&candidates.length){
-    const weights=candidates.map(k=>Math.max(1,profile.skills[k]-32));
-    let roll=rng.next()*weights.reduce((a,b)=>a+b,0); let index=0;
-    while(index<weights.length-1 && (roll-=weights[index])>=0)index++;
-    skills.push(candidates.splice(index,1)[0]);
-  }
+  for(const key of profile.growth)if(skills.length<2&&candidates.includes(key)){skills.push(key);candidates.splice(candidates.indexOf(key),1);}
+  while(skills.length<2&&candidates.length)skills.push(candidates.splice(rng.int(0,candidates.length-1),1)[0]);
   state.growth={year:save.year,skills,gains:skills.map(()=>save.player.age<19?rng.int(5,8):save.player.age<26?rng.int(2,4):rng.int(1,3))};
-  const style=rng.next()<.16?(state.style+1+rng.int(0,1))%3:undefined;
+  const style=undefined;
   const positions=save.player.role==='HITTER'?['C','1B','2B','3B','SS','LF','CF','RF','DH'].filter(p=>p!==save.player.position):[];
   const position=positions.length&&rng.next()<.17?positions[rng.int(0,positions.length-1)]:undefined;
-  state.meeting={year:save.year,style,position,selfRequest:rng.next()<.3};
+  if(state.meeting?.year!==save.year)state.meeting={year:save.year,style,position,selfRequest:rng.next()<.3};
 }
 export function effectiveSkills(player:Player, save:CareerSave) {
   if(player.id!==save.player.id)return player.skills;
@@ -69,7 +69,7 @@ export function conditionRound(save:CareerSave,rng:Rng){
 export function answerMeeting(save:CareerSave,kind:'style'|'position',accept:boolean):CareerSave {
   if(save.phase!=='PRESEASON')return save;
   const next=structuredClone(save),state=life(next),meeting=state.meeting;if(!meeting||meeting.answered)return save;
-  if(accept&&kind==='style'&&meeting.style!==undefined){state.style=meeting.style;state.growth=undefined;prepareLife(next);}
+  if(accept&&kind==='style'&&meeting.style!==undefined){const from=state.style;next.player.skills=styleRedistribution(next.player.skills,next.player.role,meeting.style);state.style=meeting.style;next.focusSkill=playStyle(next.player.role,meeting.style).growth[0];if(next.youth)next.youth.focus=next.focusSkill;state.styleHistory??=[];state.styleHistory.push({year:next.year,round:next.league.round,from,to:meeting.style});state.growth=undefined;prepareLife(next);}
   let approved=accept;
   if(accept&&kind==='position'&&meeting.position){
     const rng=new Rng((save.seed^save.year*6719)>>>0);

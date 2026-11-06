@@ -13,12 +13,12 @@ test('320px 생성 3단계는 검색·선택·뒤로가기·키보드 입력을 
   await page.getByRole('searchbox',{name:'학교·클럽 검색'}).fill('경남고');
   await page.getByRole('button',{name:/경남고.*고교 야구부/}).click();
   await page.getByRole('combobox',{name:'수비 포지션'}).selectOption('RF');
-  await page.getByRole('button',{name:/장타자의 꿈/}).click();
+  await page.getByRole('button',{name:/거포형/}).click();
   await page.getByRole('button',{name:'← 이전 단계'}).click();
   await expect(page.getByRole('textbox',{name:'선수 이름'})).toHaveValue('작은 전설');
   await page.getByRole('button',{name:'다음 단계 →'}).click();
   await expect(page.getByRole('combobox',{name:'수비 포지션'})).toHaveValue('RF');
-  await expect(page.getByRole('button',{name:/장타자의 꿈/})).toHaveAttribute('aria-pressed','true');
+  await expect(page.getByRole('button',{name:/거포형/})).toHaveAttribute('aria-pressed','true');
   await page.screenshot({path:'artifacts/creation-320.png'});
   await page.getByRole('button',{name:'다음 단계 →'}).click();
   await page.getByRole('button',{name:/^외형 4 선택/}).click();
@@ -58,10 +58,10 @@ test('방출 선수는 새 구단 입단을 선택해야 다음 시즌으로 간
 test('은퇴 저장의 MVP 12회 보상을 복구하고 회고 화면에서 이력을 본다',async({page})=>{
   const save=createCareer({name:'열두 번의 전설',role:'HITTER',teamId:'lg',hand:'RIGHT'},1);save.year=2038;save.player.age=38;save.phase='RETIRED';
   save.seasons=Array.from({length:12},(_,i)=>({year:2026+i,age:26+i,teamId:i<8?'lg':'kia',hitter:{...save.league.hitters.user,h:150,hr:30},pitcher:null,rank:1,ovr:85,awards:['시즌 MVP'],championship:true}));
-  await installSave(page,save);await page.getByRole('navigation').getByRole('button',{name:'홈',exact:true}).click();
+  await installSave(page,save);
   await expect(page.getByRole('region',{name:'시즌 MVP 목표'})).toContainText('12 / 12');
   await expect(page.getByText(/다이아몬드의 전설 · 달성/)).toBeVisible();await page.getByRole('button',{name:'연대기',exact:true}).click();
-  await expect(page.locator('.legacySummary').getByText(/2026 · LG/)).toBeVisible();await page.screenshot({path:'artifacts/legacy-career.png'});
+  await expect(page.locator('.careerTimeline').getByRole('heading',{name:/LG 트윈스/}).first()).toBeVisible();await page.screenshot({path:'artifacts/legacy-career.png'});
 });
 test('트레이드 선택은 진로 화면에서 처리하고 계약 조건을 유지한다',async({page})=>{
   const save=createCareer({name:'새 유니폼',role:'PITCHER',teamId:'lg',hand:'RIGHT'},1);save.phase='SEASON_RESULT';save.player.contractYearsLeft=3;

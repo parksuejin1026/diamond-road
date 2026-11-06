@@ -3,7 +3,7 @@ import { isYouth, graduationGrade } from './youth';
 import { isAsianGamesYear, simulateAsianGames } from './asianGames';
 import { simulateWorld, updateMilitary } from './international';
 import { personalMoment } from './moments';
-export type Decision = 'CAREER_EVENT'|'MEETING'|'MOMENT'|'ASIAN'|'WORLD'|'ASIAN_RESULT'|'WORLD_RESULT'|'CONTRACT'|'EDUCATION'|'MILITARY'|'MILITARY_RESULT';
+export type Decision = 'TURNING_POINT'|'TURNING_RESULT'| 'CAREER_EVENT'|'MEETING'|'MOMENT'|'ASIAN'|'WORLD'|'ASIAN_RESULT'|'WORLD_RESULT'|'CONTRACT'|'EDUCATION'|'MILITARY'|'MILITARY_RESULT';
 export const decisionKey=(save:CareerSave,key:string)=>`${save.year}:${key}`;
 export const acknowledged=(save:CareerSave,key:string)=>!!save.decisions?.includes(decisionKey(save,key));
 export function acknowledge(original:CareerSave,key:string):CareerSave {
@@ -11,6 +11,9 @@ export function acknowledge(original:CareerSave,key:string):CareerSave {
   return {...original,decisions:[...(original.decisions??[]),decisionKey(original,key)]};
 }
 export function pendingDecision(save:CareerSave):Decision|null {
+  const turning=save.life?.turningPoint;
+  if(save.phase!=='RETIRED'&&turning?.year===save.year&&turning.status==='PENDING')return 'TURNING_POINT';
+  if(save.phase!=='RETIRED'&&turning?.status==='RESOLVED'&&!turning.acknowledged)return 'TURNING_RESULT';
   if(save.pendingEvent)return 'CAREER_EVENT';
   const meeting=save.life?.meeting;
   if(save.phase==='PRESEASON'&&meeting&&!meeting.answered&&(meeting.style!==undefined||meeting.position))return 'MEETING';

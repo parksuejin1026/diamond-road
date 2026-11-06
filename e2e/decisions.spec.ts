@@ -45,10 +45,11 @@ test('신인 입단도 드래프트 결과와 계약 확인 화면을 분리한�
  const save=createCareer({name:'첫 계약',role:'HITTER',hand:'RIGHT',teamId:'lg',schoolId:SCHOOLS[0].id},41);save.phase='DRAFT';save.youth!.grade=3;save.youth!.draft={teamId:'lg',round:2,overallPick:17,score:75,signingBonusCR:20000,salaryCR:3000};
  await install(page,save);await page.getByRole('button',{name:'프로 입단 계약',exact:true}).click();await expect(page.getByRole('heading',{name:'신인 입단 계약',exact:true})).toBeVisible();expect((await readSave(page)).phase).toBe('DRAFT');await page.getByRole('button',{name:'조건 확인 · 입단 계약 체결'}).click();await expect.poll(async()=>(await readSave(page)).phase).toBe('PRESEASON');
 });
-test('생성 때 집중 능력을 직접 선택하고 시즌 랜덤 변경 결과를 저장한다',async({page})=>{
+test('생성 때 집중 능력을 직접 선택하고 연간 랜덤 변경 버튼을 표시하지 않는다',async({page})=>{
  await page.setViewportSize({width:390,height:844});await page.goto('./');await page.getByRole('textbox',{name:'선수 이름'}).fill('집중 선택');await page.getByRole('button',{name:'다음 단계 →'}).click();await page.getByRole('combobox',{name:'집중 육성 능력치'}).selectOption('defense');await page.getByRole('button',{name:'다음 단계 →'}).click();await page.screenshot({path:'artifacts/appearance-selection-v3.png',fullPage:true});await page.getByRole('button',{name:'나의 커리어 시작하기 →'}).click();await expect(page).toHaveURL(/career/);
  if(await page.getByRole('button',{name:'현재 방향 유지'}).count())await page.getByRole('button',{name:'현재 방향 유지'}).click();
- expect((await readSave(page)).focusSkill).toBe('defense');await page.getByRole('button',{name:'시즌 준비하기 →'}).click();await page.getByRole('button',{name:'집중 능력치 랜덤 변경 · 시즌당 1회'}).click();await expect(page.getByRole('button',{name:'올해 랜덤 변경 완료'})).toBeDisabled();expect((await readSave(page)).focusSkill).not.toBe('defense');
+ expect((await readSave(page)).focusSkill).toBe('defense');await page.getByRole('button',{name:'시즌 준비하기 →'}).click();await expect(page.getByRole('button',{name:/집중 능력치 랜덤 변경/})).toHaveCount(0);expect((await readSave(page)).focusSkill).toBe('defense');
+
 });
 
 test('병역 진로와 결과도 별도의 선택 화면에서 처리한다',async({page})=>{

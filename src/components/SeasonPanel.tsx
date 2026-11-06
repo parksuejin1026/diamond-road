@@ -1,4 +1,6 @@
 'use client';
+import LifePanel from './LifePanel';
+import {pendingDecision} from '../engine/decisions';
 import {personalMoment} from '../engine/moments';
 import {decisionKey} from '../engine/decisions';
 import YouthSeasonReview, {YouthCareerHistory} from './YouthSeasonReview';
@@ -20,14 +22,14 @@ import StatsDetails from './StatsDetails';
 import SeasonNarrative from './SeasonNarrative';
 import DevelopmentReport from './DevelopmentReport';
 import AsianGamesPanel from './AsianGamesPanel';
-export default function SeasonPanel({ save, view = 'season', busy, onChange, onBusy, onError }: { save: CareerSave; view?: 'season' | 'records'; busy: boolean; onChange: (save: CareerSave) => void; onBusy: (busy: boolean) => void; onError: (error: string) => void }) {
+export default function SeasonPanel({ save, view = 'season', busy, onChange, onBusy, onError, onRetire }: { save: CareerSave; view?: 'season' | 'records'; busy: boolean; onChange: (save: CareerSave) => void; onBusy: (busy: boolean) => void; onError: (error: string) => void; onRetire:()=>void }) {
   const ownMoment=personalMoment(save);
   const rounds = seasonRounds(save); const youth = isYouth(save);
   const needsTraining = false;
   const groupIds = new Set(save.schedule.filter(g => g.homeTeamId === save.player.teamId || g.awayTeamId === save.player.teamId).flatMap(g => [g.homeTeamId, g.awayTeamId]));
   const running = useRef(false);
   const stop = useRef(false);
-  const [section, setSection] = useState<'overview'|'competition'|'contract'>('overview');
+  const [section, setSection] = useState<'overview'|'preparation'|'competition'|'contract'>(save.phase==='PRESEASON'?'preparation':'overview');
   const [recordSection, setRecordSection] = useState<'league'|'career'|'national'>('league');
   const needsContract = !!save.pendingTrade || save.contractOffers.length > 0;
   const [progress, setProgress] = useState<number | null>(null);
@@ -41,15 +43,16 @@ export default function SeasonPanel({ save, view = 'season', busy, onChange, onB
   async function run(until: number) {
     if (running.current || busy) return;
     if (needsTraining) { onError('시즌 전 훈련에서 능력치를 하나 선택해 주세요.'); return; }
+    setSection('overview');
     running.current = true; stop.current = false; onBusy(true); onError('');
     let current = save;
     try {
       while (current.league.round < until && !stop.current) {
-        const next = ['HIGHLIGHT_READY', 'MINI_GAME'].includes(current.phase) ? resolveHighlight(current, pendingPaId(current)!) : advanceRound(current, { interactive: false, events: false });
+        const next = ['HIGHLIGHT_READY', 'MINI_GAME'].includes(current.phase) ? resolveHighlight(current, pendingPaId(current)!) : advanceRound(current, { interactive: false, events: true });
         if (next === current) break;
         // Persist every complete round before publishing it to the screen.
         await saveCareer(next); current = next; onChange(current); setProgress(current.league.round);
-        if (next.pendingEvent || next.phase==='SEASON_RESULT') break;
+        if (pendingDecision(next) || next.phase==='SEASON_RESULT') break;
         await new Promise<void>(resolve => setTimeout(resolve, 0));
       }
     } catch (e) { onError(e instanceof Error ? e.message : '진행하지 못했습니다. 마지막 저장 라운드에서 다시 시도해 주세요.'); }
@@ -58,7 +61,7 @@ export default function SeasonPanel({ save, view = 'season', busy, onChange, onB
   async function proceed() {
     if (running.current || busy) return;
     running.current = true; onBusy(true); onError('');
-    try { const next = nextSeason(save); await saveCareer(next); onChange(next); setSection('overview'); }
+    try { const next = nextSeason(save); await saveCareer(next); onChange(next); setSection('preparation'); }
     catch (error) { onError(error instanceof Error ? error.message : '다음 시즌을 저장하지 못했습니다.'); }
     finally { running.current = false; onBusy(false); }
   }
@@ -72,24 +75,24 @@ export default function SeasonPanel({ save, view = 'season', busy, onChange, onB
     return score(b) - score(a);
   })[0];
   if (save.phase === 'DRAFT' && view === 'season') return <section className="season"><YouthPanel save={save} busy={busy} update={update} /></section>;
-  return <section className="season"><div hidden={view !== 'season'}><div hidden={save.phase==='PRESEASON'} className="subTabs" role="group" aria-label="시즌 화면">{([['overview','요약'],['competition','대회'],['contract','진로']] as const).map(([key,label])=><button key={key} disabled={busy} aria-pressed={section===key} onClick={()=>setSection(key)}>{label}{key==='contract'&&needsContract?' ●':''}</button>)}</div><div hidden={section!=='overview'}>
+  return <section className="season"><div className="seasonPeriod" hidden={view!=='season'}><span className="eyebrow">{save.year} · {youth?educationLabel(save):'KBO'}</span><strong>{save.year}년 · {save.league.round} / {rounds} 라운드</strong></div><div hidden={view !== 'season'}><div className="subTabs seasonWorkspaceTabs" role="group" aria-label="시즌 화면">{([['overview','경기 진행'],['preparation','성장·상점'],['competition','대회'],['contract','진로']] as const).map(([key,label])=><button key={key} disabled={busy} aria-pressed={section===key} onClick={()=>setSection(key)}>{label}{key==='contract'&&needsContract?' ●':''}</button>)}</div><div hidden={section!=='overview'}>
     <DevelopmentReport save={save} /><YouthSeasonReview save={save}/>
     {!youth && ['SEASON_RESULT','RETIRED'].includes(save.phase) && <section className="notice"><h3>시즌 총평</h3><p>{seasonReview(save)}</p><p>시즌 MVP · {save.awards.some(a=>a.playerId===save.player.id&&a.title==='시즌 MVP')?'수상 🏆':'미수상'}</p><p>골든글러브 · {save.awards.some(a=>a.playerId===save.player.id&&a.title.includes('골든글러브'))?'수상 🏆':youth?'고교 선수 대상 아님':'미수상'}</p></section>}
     {save.phase==='POSTSEASON'&&<section className="postseasonEntry"><p className="eyebrow">THE ROAD TO GLORY</p><h2>{standings(save.league).findIndex(t=>t.teamId===save.player.teamId)<5?'가을 야구, 당신의 무대입니다.':'챔피언의 주인을 가릴 시간입니다.'}</h2><PixelBallpark/><p>정규시즌 기록은 확정됐습니다. 포스트시즌 기록과 명장면은 별도로 남습니다.</p><button className="primary" disabled={busy} onClick={()=>update(playPostseason(save))}>포스트시즌 진행 · 명장면 보기 →</button></section>}
 
     {progress !== null && <div className="seasonWatch" role="status"><PixelBallpark school={youth}/><span>자동 관전 · {progress} / {rounds} 라운드</span>{lastGame && <p>{teamName(lastGame.awayTeamId)} {lastGame.away} : {lastGame.home} {teamName(lastGame.homeTeamId)}</p>}</div>}
     {save.phase !== 'PRESEASON' && <h3>{save.phase === 'RETIRED' ? '커리어 기록' : save.phase === 'SEASON_RESULT' ? youth ? `${educationLabel(save)} 시즌 결산` : '정규 시즌 결산' : youth ? `${educationLabel(save)} 리그` : '정규 시즌'}</h3>}
-    <p>{save.year}년 · {save.league.round} / {rounds} 라운드 · {save.league.results.length} / {save.schedule.length} 경기</p>
+    <p>완료 경기 · {save.league.results.length} / {save.schedule.length}</p>
     <progress max={rounds} value={progress ?? save.league.round} aria-label="정규 시즌 진행률" />
     {save.phase!=='PRESEASON' && <div className="statline">{h && hr ? <><strong>AVG {hr.avg.toFixed(3)}</strong><span>{h.g}경기 · {h.pa}타석 · {h.h}안타 · {h.hr}홈런 · {h.rbi}타점</span><span>OBP {hr.obp.toFixed(3)} · SLG {hr.slg.toFixed(3)} · OPS {hr.ops.toFixed(3)}</span></> : p && pr ? <><strong>ERA {pr.era?.toFixed(2) ?? '—'}</strong><span>{p.g}경기 · {p.gs}선발 · {Math.floor(p.outs / 3)}.{p.outs % 3}이닝 · {p.wins}승 {p.losses}패</span><span>{p.so}탈삼진 · {p.er}자책점 · WHIP {pr.whip?.toFixed(2) ?? '—'}</span></> : null}</div>}
     {save.phase!=='PRESEASON' && <StatsDetails hitter={h} pitcher={p} />}
     {save.postseason&&!ownMoment&&<p>이번 포스트시즌에는 본인의 홈런·탈삼진·슈퍼 캐치 명장면이 기록되지 않았습니다.</p>}
     {save.phase==='SEASON_RESULT' && <details><summary>이번 시즌 이야기</summary><SeasonNarrative save={save}/></details>}
-    {['PRESEASON', 'SIMULATING', 'HIGHLIGHT_READY', 'MINI_GAME'].includes(save.phase) && <>{needsTraining && <p id="trainingRequired" role="status">시즌 전 훈련에서 능력치를 하나 선택하면 시즌을 시작할 수 있습니다.</p>}<div className="actions"><button className="primary" disabled={busy || needsTraining} aria-describedby={needsTraining ? 'trainingRequired' : undefined} onClick={() => run(rounds)}>{progress !== null ? `시즌 진행 중 · ${progress} / ${rounds}` : '시즌 전체 자동 진행 →'}</button>{progress !== null && <button onClick={() => { stop.current = true; }}>저장 후 일시정지</button>}</div></>}
-    </div><div hidden={section!=='contract'}><p>구단 계약 제안은 별도의 계약 화면에서 확인하고 결정합니다.</p>{youth&&<p>졸업 후 진로 화면에서 프로 도전 또는 대학 진학을 선택합니다.</p>}</div><div hidden={section!=='competition'} className="competitionView"><InternationalPanel save={save} busy={busy} update={update}/><AsianGamesPanel save={save}/><YouthPanel save={save} busy={busy} update={update}/>{!youth&&!save.asianGames?.some(report=>report.year===save.year)&&<p>올해 아시안게임 결과가 없습니다. 대회는 2026년부터 4년마다 시즌과 함께 진행합니다.</p>}</div>
+    </div><div hidden={section!=='preparation'}><LifePanel save={save} busy={busy} update={update}/></div><div hidden={section!=='contract'}><p>구단 계약 제안은 별도의 계약 화면에서 확인하고 결정합니다.</p>{youth&&<p>졸업 후 진로 화면에서 프로 도전 또는 대학 진학을 선택합니다.</p>}</div><div hidden={section!=='competition'} className="competitionView"><InternationalPanel save={save} busy={busy} update={update}/><AsianGamesPanel save={save}/><YouthPanel save={save} busy={busy} update={update}/>{!youth&&!save.asianGames?.some(report=>report.year===save.year)&&<p>올해 아시안게임 결과가 없습니다. 대회는 2026년부터 4년마다 시즌과 함께 진행합니다.</p>}</div>
+    {['PRESEASON', 'SIMULATING', 'HIGHLIGHT_READY', 'MINI_GAME'].includes(save.phase) && <>{needsTraining && <p id="trainingRequired" role="status">시즌 전 훈련에서 능력치를 하나 선택하면 시즌을 시작할 수 있습니다.</p>}<div className="actions seasonActionBar"><button className="primary" disabled={busy || needsTraining} aria-describedby={needsTraining ? 'trainingRequired' : undefined} onClick={() => run(rounds)}>{progress !== null ? `시즌 진행 중 · ${progress} / ${rounds}` : save.league.round>0?'시즌 이어서 자동 진행 →':'시즌 전체 자동 진행 →'}</button>{progress !== null && <button onClick={() => { stop.current = true; }}>저장 후 일시정지</button>}</div></>}
     {save.phase === 'SEASON_RESULT' && <button className="primary" disabled={busy || needsContract} onClick={proceed}>{save.player.age >= 38 ? '은퇴 기록 보기' : youth ? save.youth!.grade === graduationGrade(save) ? '신인 드래프트 참가 →' : '다음 학년으로 →' : '성장 반영 · 다음 시즌 →'}</button>}
     {needsContract && <p role="status">진로 탭에서 트레이드 또는 입단 제안을 먼저 선택해 주세요.</p>}
-    {save.phase === 'SEASON_RESULT' && save.player.age >= 35 && <button className="danger" disabled={busy} onClick={() => { if (window.confirm('이번 시즌을 마지막으로 은퇴할까요?')) update(retire(save)); }}>이번 시즌을 끝으로 은퇴</button>}
+    {save.phase === 'SEASON_RESULT' && save.player.age >= 35 && <button className="danger" disabled={busy} onClick={onRetire}>이번 시즌을 끝으로 은퇴</button>}
     {save.phase === 'RETIRED' && <div className="notice"><p className="eyebrow">HALL OF FAME</p><h2>{legacyGrade(save.seasons).grade}</h2><p>{save.seasons.length}시즌 · 커리어 점수 {legacyGrade(save.seasons).score.toLocaleString()}</p><p>{save.seasons.filter(s => s.championship).length}회 우승 · {save.seasons.reduce((n, s) => n + (s.awards?.length ?? 0), 0)}회 개인상</p></div>}
     {save.phase === 'RETIRED' && bestSeason && <div className="notice"><strong>최고의 시즌 · {bestSeason.year}</strong><p>{bestSeason.hitter ? `${bestSeason.hitter.h}안타 · ${bestSeason.hitter.hr}홈런 · ${bestSeason.hitter.rbi}타점` : `${bestSeason.pitcher?.wins}승 · ${bestSeason.pitcher?.so}탈삼진`}</p><p>{save.seasons.flatMap(s => (s.awards ?? []).map(a => `${s.year} ${a}`)).join(' · ') || '매 시즌 쌓아 올린 기록이 당신의 유산입니다.'}</p></div>}
     </div><div hidden={view !== 'records'}>

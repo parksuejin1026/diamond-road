@@ -1,3 +1,4 @@
+import {triggerTurningPoint} from './turningPoints';
 import { pendingDecision } from './decisions';
 import { youthCupAwards } from './youthAwards';
 import { military } from './international';
@@ -169,7 +170,7 @@ export function advanceRound(original: CareerSave, options: { interactive?: bool
   if(original.phase==='POSTSEASON')return playPostseason(original);
   const rounds = seasonRounds(original);
   if (!['PRESEASON', 'SIMULATING'].includes(original.phase) || original.league.round >= rounds) return original;
-  if (original.pendingEvent) return original;
+  if (original.pendingEvent || original.life?.turningPoint?.status==='PENDING' || original.life?.turningPoint?.status==='RESOLVED'&&!original.life.turningPoint.acknowledged) return original;
   const save = restoreAvailability(structuredClone(original)); prepareLife(save); const rng = new Rng(save.rngState); save.phase = 'SIMULATING';
   const players = Object.fromEntries(save.players.map(p => [p.id, p]));
   const round = save.league.round + 1;
@@ -189,6 +190,7 @@ export function advanceRound(original: CareerSave, options: { interactive?: bool
   if(!isYouth(save))credit(save,`salary-${save.year}-${round}`, Math.floor(save.player.salaryCR*10000/rounds),'연봉 분할 입금');
   updateCondition(save, rng);
   save.rngState = rng.state;
+  if(options.events===true)triggerTurningPoint(save);
   if (round === rounds && isYouth(save)) {
     finishSchoolYear(save, rng, simulateSchoolCups(save, rng));
     save.rngState = rng.state;
@@ -295,7 +297,7 @@ export function retire(original: CareerSave): CareerSave {
   if(original.phase==='RETIRED'||original.pendingGame)return original;
   const save=structuredClone(original);
   if(!isYouth(save)&&save.league.round>0&&!save.seasons.some(s=>s.year===save.year))save.seasons.push({year:save.year,age:save.player.age,teamId:save.player.teamId,hitter:save.league.hitters.user?{...save.league.hitters.user}:null,pitcher:save.league.pitchers.user?{...save.league.pitchers.user}:null,rank:standings(save.league).findIndex(t=>t.teamId===save.player.teamId)+1,ovr:overall(save.player),awards:[],championship:false});
-  save.phase='RETIRED';save.contractOffers=[];save.pendingTrade=null;return save;
+  save.phase='RETIRED';save.contractOffers=[];save.pendingTrade=null;save.pendingEvent=null;if(save.life?.turningPoint&&save.life.turningPoint.status!=='NONE'){save.life.turningPoint.status='RESOLVED';save.life.turningPoint.acknowledged=true;}return save;
 }
 function simulateSchoolCups(save: CareerSave, rng: Rng): SchoolCup[] {
   const players = Object.fromEntries(save.players.map(p => [p.id, p]));

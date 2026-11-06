@@ -28,7 +28,7 @@ it('특성에 따른 두 능력치만 자동 성장하고 결산 재처리는 �
 });
 it('선택과 보고서가 없는 이전 저장도 기본 육성 및 다음 시즌 진행을 지원한다', () => {
   const save = createCareer({ name: '이전', role: 'PITCHER', teamId: 'lg', hand: 'RIGHT' }, 1);
-  delete save.focusSkill; expect(focusSkill(save)).toBe('control');
+  delete save.focusSkill; expect(focusSkill(save)).toBe('velocity');
   save.phase = 'SEASON_RESULT';
   const next = nextSeason(save); expect(next.year).toBe(save.year + 1);
   expect(Object.values(next.player.skills).every(value => value >= 1 && value <= 99)).toBe(true);
